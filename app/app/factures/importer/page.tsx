@@ -11,7 +11,7 @@ export default function ImportInvoicesPage() {
     <>
       <PageHeader
         title="Importer des factures"
-        description="Depuis l'export CSV de votre logiciel de facturation, ou directement depuis vos factures électroniques Factur-X. Les numéros déjà présents sont ignorés."
+        description="Depuis l'export CSV de votre logiciel de facturation, ou directement depuis vos factures électroniques. Les numéros déjà présents sont ignorés."
       />
       <Reveal index={1} className="max-w-5xl">
         <Card>

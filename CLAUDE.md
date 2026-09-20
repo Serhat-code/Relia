@@ -1075,3 +1075,25 @@ invitations sont à ce jour la seule table du schéma à employer un grant de co
 
 **Et la leçon sur les sous-agents** : la revue de sécurité avait affirmé cette colonne « explicitement exclue du
 grant select ». C'était faux. Un rapport d'agent se vérifie, surtout quand il conclut qu'une protection existe.
+
+### Factures électroniques : les deux syntaxes de la norme EN 16931 (20/09/2026)
+
+La norme européenne admet **deux syntaxes** pour la même facture. Relia ne lisait que la première :
+
+- **CII** — celle du Factur-X franco-allemand, livrée dans un PDF/A-3 ou seule en XML ;
+- **UBL** — celle de la plupart des autres pays de l'Union : **e-Factura roumain**, Croatie, Peppol.
+
+`lib/invoices/electronic-invoice.ts` reconnaît la syntaxe à **l'élément racine** (préfixe de namespace
+retiré) et oriente vers `parseCiiInvoice` ou `parseUblInvoice`. Deviner en essayant les deux lecteurs donnerait
+des messages d'erreur trompeurs ; la racine tranche sans ambiguïté. Les aides XML communes vivent dans
+`lib/invoices/xml.ts`, pour que les deux lecteurs ne divergent pas.
+
+- Un **avoir** (`CreditNote`) est refusé en le nommant : Relia ne relance que des factures.
+- Le SIREN n'est retenu que si le registre l'annonce (`schemeID` 0002) ou si la forme est exactement celle d'un
+  SIREN. **Un CUI roumain ne devient jamais un SIREN** — le champ reste vide plutôt que rempli de travers, ce
+  qui préserve la règle de scoring du §2.4.
+- La source reste `facturx` dans l'énumération de la base : la renommer demanderait une migration et un
+  changement de type pour un gain cosmétique. Les libellés d'interface disent « facture électronique ».
+
+C'est la brique qui rend l'ouverture à la Roumanie techniquement réelle : leur facturation électronique est
+obligatoire et produit de l'UBL, que Relia sait désormais lire.

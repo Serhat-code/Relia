@@ -1,9 +1,9 @@
-import { XMLParser } from "fast-xml-parser";
 import { decodePDFRawStream, PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFRawStream, PDFString } from "pdf-lib";
 import { normalizeSiren } from "@/lib/siren";
 import { addDays } from "./dates";
 import { importRowSchema, type ImportRow } from "./import-row";
 import { parseDate } from "./parse";
+import { all, amount, attribute, child, hasDoctype, isNode, text, xmlParser } from "./xml";
 
 /**
  * Lecture des factures électroniques Factur-X : un PDF/A-3 qui embarque la facture structurée
@@ -28,50 +28,6 @@ const ERRORS = {
 } as const;
 
 export type FacturXResult = { ok: true; row: ImportRow; sellerName: string | null } | { ok: false; error: string };
-
-type XmlNode = { [key: string]: unknown };
-
-const parser = new XMLParser({
-  removeNSPrefix: true,
-  ignoreAttributes: false,
-  attributeNamePrefix: "@_",
-  parseTagValue: false,
-  parseAttributeValue: false,
-  maxNestedTags: 64,
-});
-
-const isNode = (value: unknown): value is XmlNode => typeof value === "object" && value !== null && !Array.isArray(value);
-
-/** Un élément répété (plusieurs conditions de paiement…) arrive en tableau : on garde le premier. */
-function child(node: unknown, ...path: string[]): unknown {
-  let current: unknown = node;
-  for (const key of path) {
-    const value = isNode(current) ? current[key] : undefined;
-    current = Array.isArray(value) ? value[0] : value;
-  }
-  return current;
-}
-
-function all(node: unknown, key: string): unknown[] {
-  const value = isNode(node) ? node[key] : undefined;
-  if (value === undefined) return [];
-  return Array.isArray(value) ? value : [value];
-}
-
-function text(node: unknown): string | null {
-  const value = isNode(node) ? node["#text"] : node;
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed === "" ? null : trimmed;
-}
-
-const attribute = (node: unknown, name: string) => (isNode(node) ? text(node[`@_${name}`]) : null);
-
-function amount(node: unknown): number | null {
-  const raw = text(node);
-  if (raw === null || !/^-?\d+(\.\d+)?$/.test(raw)) return null;
-  return Math.round(Number(raw) * 100) / 100;
-}
 
 /** Date CII au format 102 (AAAAMMJJ). */
 function ciiDate(node: unknown): string | null {
@@ -100,11 +56,11 @@ function taxTotal(settlement: unknown, currency: string | null): number | null {
 /** Lit une facture CII (le XML d'un Factur-X) et la ramène au format d'import de Relia. */
 export function parseCiiInvoice(xml: string): FacturXResult {
   // Une facture CII n'a jamais de DOCTYPE : on refuse d'emblée les entités déclarées (expansion).
-  if (/<!DOCTYPE/i.test(xml)) return { ok: false, error: ERRORS.notCii };
+  if (hasDoctype(xml)) return { ok: false, error: ERRORS.notCii };
 
   let document: unknown;
   try {
-    document = parser.parse(xml);
+    document = xmlParser.parse(xml);
   } catch {
     return { ok: false, error: ERRORS.notCii };
   }

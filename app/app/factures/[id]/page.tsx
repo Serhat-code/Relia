@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 const SOURCE_LABELS: Readonly<Record<InvoiceDetail["source"], string>> = {
   manual: "Saisie manuelle",
   csv: "Import CSV",
-  facturx: "Facture électronique Factur-X",
+  facturx: "Facture électronique",
   pennylane: "Pennylane",
   qonto: "Qonto",
   stripe: "Stripe",

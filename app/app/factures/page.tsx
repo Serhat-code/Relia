@@ -52,7 +52,7 @@ export default async function InvoicesPage({ searchParams }: PageProps) {
         <Reveal index={1}>
           <EmptyState
             title="Aucune facture pour l'instant"
-            description="Importez l'export CSV de votre logiciel de facturation, déposez des factures électroniques Factur-X, ou saisissez une facture à la main."
+            description="Importez l'export CSV de votre logiciel de facturation, déposez des factures électroniques, ou saisissez une facture à la main."
             actions={<HeaderActions />}
           />
         </Reveal>

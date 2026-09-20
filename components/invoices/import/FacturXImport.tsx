@@ -7,23 +7,23 @@ import { Button } from "@/components/ui/Button";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { CLIENT_TYPE_LABELS, type ClientType } from "@/lib/debtors/client-type";
 import { formatCurrency, formatDate, formatNumber, pluralize } from "@/lib/format";
-import type { FacturXResult } from "@/lib/invoices/facturx";
+import type { ElectronicInvoiceResult } from "@/lib/invoices/electronic-invoice";
 import type { ImportRow } from "@/lib/invoices/import-row";
 import { FileDropZone } from "./FileDropZone";
 
 /** Au-delà, mieux vaut un export CSV : la lecture se fait fichier par fichier dans le navigateur. */
 const MAX_FILES = 50;
 
-type ReadFile = { key: string; name: string; result: FacturXResult };
+type ReadFile = { key: string; name: string; result: ElectronicInvoiceResult };
 
 /** Lecture dans le navigateur : le PDF ne quitte pas le poste, seules les données de la facture sont envoyées. */
 async function readFiles(files: readonly File[]): Promise<ReadFile[]> {
-  const { readFacturX } = await import("@/lib/invoices/facturx");
+  const { readElectronicInvoice } = await import("@/lib/invoices/electronic-invoice");
   return Promise.all(
     files.map(async (file, index) => ({
       key: `${file.name}-${file.lastModified}-${index}`,
       name: file.name,
-      result: await readFacturX(new Uint8Array(await file.arrayBuffer()), file.name),
+      result: await readElectronicInvoice(new Uint8Array(await file.arrayBuffer()), file.name),
     })),
   );
 }
@@ -60,8 +60,8 @@ export function FacturXImport({ isImporting, onImport }: FacturXImportProps) {
     <div className="flex flex-col gap-6">
       {notice && <FormMessage tone="info">{notice}</FormMessage>}
       <FileDropZone
-        label="Choisir des factures Factur-X"
-        hint="PDF Factur-X ou XML (syntaxe CII), jusqu'à 10 Mo chacun. Les fichiers sont lus sur votre poste."
+        label="Choisir des factures électroniques"
+        hint="PDF Factur-X, ou XML aux normes européennes CII et UBL (e-Factura roumain compris), jusqu'à 10 Mo chacun. Les fichiers sont lus sur votre poste."
         accept=".pdf,.xml,application/pdf,text/xml,application/xml"
         isMultiple
         isDisabled={isReading || isImporting}

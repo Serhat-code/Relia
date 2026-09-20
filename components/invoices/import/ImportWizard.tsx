@@ -21,7 +21,7 @@ type Mode = "csv" | "facturx";
 
 const MODES = [
   { value: "csv", label: "Fichier CSV", icon: FileSpreadsheet },
-  { value: "facturx", label: "Factures Factur-X", icon: FileCode2 },
+  { value: "facturx", label: "Factures électroniques", icon: FileCode2 },
 ] as const;
 
 /** Nombre de numéros ignorés affichés ; au-delà, un simple compte suffit. */
