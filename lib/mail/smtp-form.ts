@@ -19,6 +19,9 @@ export const SMTP_PRESETS = [
   { label: "Free", host: "smtp.free.fr", port: 465, imapHost: "imap.free.fr" },
   { label: "SFR", host: "smtp.sfr.fr", port: 465, imapHost: "imap.sfr.fr" },
   { label: "Zoho Mail (UE)", host: "smtp.zoho.eu", port: 465, imapHost: "imap.zoho.eu" },
+  // GMX : l'accès par un logiciel externe est refusé tant qu'il n'est pas activé dans le compte
+  // (Paramètres → POP3 & IMAP) ; sans cela le serveur rejette le mot de passe, même s'il est bon.
+  { label: "GMX", host: "mail.gmx.com", port: 465, imapHost: "imap.gmx.com" },
 ] as const;
 
 export type SmtpFormSettings = {

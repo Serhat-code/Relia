@@ -675,8 +675,19 @@ Section tenue à jour par Claude Code à chaque palier.
   (liste d'autorisation : plage `unicast` d'ipaddr.js seulement, ce qui écarte aussi les IPv4 cachées dans une IPv6),
   la connexion se fait à l'adresse vérifiée (le nom ne sert qu'au certificat TLS, TLS 1.2 minimum) ; ports 25,
   465, 587, 2525 ; délais de 10 s ; accès vérifié (`verify`) avant l'enregistrement. Préréglages des messageries
-  courantes des TPE (OVHcloud, IONOS, Infomaniak, Gandi, Orange, Free, SFR, Zoho UE). `smtp-ports.ts` est séparé
-  de la garde (`node:net`) pour rester importable côté client.
+  courantes des TPE (OVHcloud, IONOS, Infomaniak, Gandi, Orange, Free, SFR, Zoho UE, GMX). `smtp-ports.ts` est
+  séparé de la garde (`node:net`) pour rester importable côté client.
+- **Diagnostic d'un échec de connexion SMTP** (20/09/2026, à partir d'un cas réel sur GMX) : le journal d'audit ne
+  garde que `{ok, host}` (minimisation), et `verifySmtp` renvoie l'erreur au formulaire sans l'écrire dans les
+  journaux Vercel — **c'est donc le message à l'écran qui oriente**, et lui seul. « Le serveur SMTP a refusé
+  l'identifiant ou le mot de passe » = `EAUTH` ; « Connexion au serveur SMTP impossible » = tout le reste (port,
+  blocage réseau, garde SSRF). Vérifier d'abord la joignabilité réelle du serveur (connexion TLS et bannière,
+  résolution DNS) avant de soupçonner le code : dans ce cas, les quatre hôtes GMX répondaient et leurs adresses
+  sont publiques, ce qui a écarté d'emblée le port, le nom d'hôte et la garde SSRF.
+- **GMX** (et les messageries grand public en général) : l'accès par un logiciel externe est **refusé tant qu'il
+  n'est pas activé dans le compte** (Paramètres → POP3 & IMAP) ; le serveur rejette alors le mot de passe même
+  s'il est correct. Avec la validation en deux étapes, un mot de passe d'application est obligatoire. L'identifiant
+  doit être l'adresse complète. `mail.gmx.com` et `mail.gmx.net` répondent tous deux sur 465 et 587.
 - Messages MIME construits par `nodemailer/lib/mail-composer` (texte + HTML, en-têtes encodés).
 - E-mail de test envoyé à la boîte elle-même (tout membre) ; tracé.
 - **Revue de sécurité du palier 9**, corrections appliquées : garde SSRF réécrite en liste d'autorisation (`::127.0.0.1`,
@@ -787,9 +798,13 @@ Section tenue à jour par Claude Code à chaque palier.
   sur les 13 versions jusqu'à `20260919140000`) : les migrations suivantes passent par un simple
   `npx supabase db push`.
 - **Règle** : une migration appliquée sur `relia-dev` n'est plus jamais modifiée ; toute correction passe par une
-  nouvelle migration. **Reste à appliquer** : `20260919150000_maintenance.sql`. Une autre session applique parfois
-  les fichiers directement sur `relia-dev` : avant de modifier une migration récente, vérifier qu'elle n'y est pas
-  déjà (empreinte MD5 du code des fonctions, comparée par `supabase db query --linked`).
+  nouvelle migration. Une autre session applique parfois les fichiers directement sur `relia-dev` : avant de
+  modifier une migration récente, vérifier qu'elle n'y est pas déjà (empreinte MD5 du code des fonctions).
+- **Historique complet depuis le 20/09/2026** : `20260919150000_maintenance.sql` avait elle aussi été appliquée
+  hors CLI (le `db push` a buté sur « function purge_expired_data already exists ») ; les empreintes MD5 des trois
+  fonctions et leurs privilèges ont été vérifiés identiques au fichier, la version a été marquée appliquée, puis
+  `20260920100000_cron_interne.sql` poussée normalement. **Les 15 migrations sont à distance et dans l'historique** :
+  un simple `npx supabase db push` suffit désormais.
 - Vérifier l'état : `npx supabase migration list` (historique) et `npx supabase db query --linked "select …"`
   (lecture), sans Docker. `db dump` exige Docker.
 
@@ -911,3 +926,37 @@ Section tenue à jour par Claude Code à chaque palier.
   différent à chaque requête et sans violation dans le navigateur, en-têtes, espace client redirigé, crons et
   webhook refusés sans secret ni signature, inscription vide refusée), démonstrations (réponse et promesse,
   tableau de bord, journal, offres). `workers: 2` : plus d'instances d'Edge en parallèle se ferment en cours de test.
+
+### Mise en service Supabase / Vercel / Stripe (20/09/2026)
+
+Faite depuis Claude Code par les serveurs MCP (`.mcp.json` : Supabase en lecture seule, Stripe, Vercel).
+
+- **Supabase `relia-dev`** : `pg_cron` 1.6.4 et `pg_net` 0.20.4 étaient **déjà activés** (rien à faire au tableau
+  de bord) ; `cron.schedule` vit bien dans le schéma `cron` et `net.http_get` dans le schéma `net`, ce dont dépend
+  `private.call_cron_endpoint`. Les quatre tâches sont planifiées et actives (`select * from cron.job`).
+- **Vercel** : équipe `team_uX0yP6f6aM1V4KSD98lQJLsu`, projet `relia` (`prj_krRLi2HLNWGVMVsfpGx00Mqi88OP`),
+  domaine de production **`relia-pi.vercel.app`**, dépôt Git déjà relié, Node 24.x, un déploiement de production
+  `READY`. Région des fonctions réglée sur `cdg1` (§2.2). Les variables avaient été créées **vides** à la création
+  du projet ; renseignées depuis : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `NEXT_PUBLIC_SITE_URL` (production seule, pour que les préversions suivent `VERCEL_BRANCH_URL`),
+  `STRIPE_PRICE_STARTER|PRO|BUSINESS`, `STRIPE_AUTOMATIC_TAX=false`.
+  L'intégration Supabase de Vercel injecte en plus ses propres variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`, `POSTGRES_*`) : l'application ne les lit pas, elle utilise les siennes.
+- **Stripe (mode test)** : trois produits et leurs prix mensuels en euros, `tax_behavior: exclusive` (prix HT),
+  `metadata.relia_plan` pour la traçabilité —
+  Essentiel `price_1UHmCN1rNt8t8aahx3AQZDdL` (29 €), Pro `price_1UHmCb1rNt8t8aah9lTGsXdK` (49 €),
+  Business `price_1UHmCl1rNt8t8aahKi4hMttP` (79 €).
+- **Avis Supabase (`get_advisors`), aucun à corriger** :
+  - six fonctions `security definer` exécutables par `authenticated` (`approve_reminder`, `cancel_reminder`,
+    `change_invoice_status`, `record_promise`, `resolve_reply`, `resume_reminders`) — **c'est voulu** : les écritures
+    directes sur ces tables ont été retirées aux membres, ces fonctions sont le seul chemin et vérifient
+    l'organisation de l'appelant. Ne pas les « corriger » ;
+  - clés étrangères composites sans index couvrant et index jamais utilisés : niveau INFO sur une base de
+    démonstration quasi vide (8 factures), donc non interprétable. À revoir avec des données réelles, pas avant.
+  - **À activer au tableau de bord** : Auth → protection contre les mots de passe compromis (HaveIBeenPwned),
+    gratuite et actuellement désactivée.
+- **Restent à faire par l'utilisateur** (refusés à l'agent par les garde-fous, à raison) : valeur de
+  `SUPABASE_SECRET_KEY` et `STRIPE_SECRET_KEY` sur Vercel, `CRON_SECRET` (Vercel + Vault), création du point de
+  terminaison webhook Stripe, configuration du portail client (résiliation en fin de période), et passage de la
+  protection de déploiement Vercel de `all_except_custom_domains` à `preview` — sans quoi la production répond 401
+  aux crons et à Stripe.
