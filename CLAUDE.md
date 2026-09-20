@@ -1049,3 +1049,29 @@ Les revues `database-reviewer` et `security-reviewer` ont été lancées sur le 
 ce que les 889 tests ne voyaient pas : la régression du compte orphelin, et trois écrans affichant « euros »
 sur des montants d'une autre devise. Les lancer **avant de commiter**, sur un périmètre nommé fichier par
 fichier, avec le modèle de menace explicite — un prompt vague rend un rapport vague.
+
+### Privilèges de colonnes : `grant select (…)` est **additif** (20/09/2026)
+
+Piège coûteux, découvert en vérifiant la base plutôt qu'en lisant la migration. Supabase accorde par défaut
+le SELECT sur **toute** la table au rôle `authenticated` (`alter default privileges … grant all on tables`).
+Écrire `grant select (col_a, col_b) on t to authenticated` **n'exclut donc pas** les autres colonnes : il ajoute
+un privilège à un privilège déjà total. La colonne `invitations.token_hash`, censée rester hors de portée, était
+lisible par n'importe quel membre de l'organisation.
+
+L'ordre correct, et la seule forme qui restreigne vraiment :
+
+```sql
+revoke select on public.t from authenticated;
+grant select (colonnes voulues) on public.t to authenticated;
+```
+
+Même piège pour l'écriture : une table neuve hérite d'`insert`, `update`, `delete` tant qu'ils ne sont pas
+retirés explicitement — la RLS seule ne suffit pas à s'en remettre au « refus implicite » d'une commande sans
+politique, qui saute dès qu'une politique est ajoutée plus tard pour un autre besoin.
+
+**Vérifier en base, pas dans le fichier** : `has_column_privilege('authenticated', 'public.t', 'col', 'select')`
+et `has_table_privilege(...)`. Deux tests le figent désormais dans `tests/db/invitations.test.ts`. Les
+invitations sont à ce jour la seule table du schéma à employer un grant de colonnes en lecture.
+
+**Et la leçon sur les sous-agents** : la revue de sécurité avait affirmé cette colonne « explicitement exclue du
+grant select ». C'était faux. Un rapport d'agent se vérifie, surtout quand il conclut qu'une protection existe.
