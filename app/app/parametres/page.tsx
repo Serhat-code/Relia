@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { FormMessage } from "@/components/ui/FormMessage";
 import { ACTIVE_SUBSCRIPTION_STATUSES } from "@/lib/billing/access";
 import { isPaidPlan, PLANS } from "@/lib/billing/plans";
+import { TeamInvitations } from "@/components/settings/TeamInvitations";
+import { listPendingInvitations } from "@/lib/data/invitations";
 import { listTeam, type TeamMember } from "@/lib/data/organization-settings";
 import { requireMember } from "@/lib/data/session";
 import { formatDate } from "@/lib/format";
@@ -30,7 +32,12 @@ const CHECKOUT_MESSAGES: Readonly<Record<string, { tone: "success" | "info"; tex
 };
 
 export default async function SettingsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
-  const [member, team, params] = await Promise.all([requireMember(), listTeam(), searchParams]);
+  const [member, team, invitations, params] = await Promise.all([
+    requireMember(),
+    listTeam(),
+    listPendingInvitations(),
+    searchParams,
+  ]);
   const organization = member.organization;
   const canManage = member.role !== "member";
   const status = organization.billing.subscriptionStatus;
@@ -128,6 +135,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   </li>
                 ))}
               </ul>
+              <TeamInvitations
+                invitations={invitations.map((invitation) => ({
+                  id: invitation.id,
+                  email: invitation.email,
+                  role: invitation.role,
+                  expiresAt: invitation.expiresAt,
+                }))}
+                canManage={canManage}
+              />
             </CardContent>
           </Card>
         </Reveal>

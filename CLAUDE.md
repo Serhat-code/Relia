@@ -980,3 +980,72 @@ Faite depuis Claude Code par les serveurs MCP (`.mcp.json` : Supabase en lecture
   terminaison webhook Stripe, configuration du portail client (résiliation en fin de période), et passage de la
   protection de déploiement Vercel de `all_except_custom_domains` à `preview` — sans quoi la production répond 401
   aux crons et à Stripe.
+
+### Ouverture hors de France — étude et premières briques (20/09/2026)
+
+**Étude concurrentielle.** Le marché de la relance B2B n'est pas vide, mais il est segmenté et aucun acteur
+ne descend jusqu'à la TPE en libre-service :
+
+- **Sidetrade** : ETI et grands comptes, IA et analyse des réponses en NLP, 85 pays, 450 salariés.
+- **Upflow** : PME tech et SaaS, API ouverte, connecteurs Stripe et GoCardless, **lien de paiement intégré**
+  (que Relia ne peut pas proposer, §2.1).
+- **LeanPay** : PME et ETI B2B, relances multicanal (SMS, LRAR), tarif indexé sur le chiffre d'affaires.
+- Interfaces disponibles en français, anglais, espagnol seulement : **aucun n'est localisé pour l'Europe centrale**.
+
+**Pays.** Le motif reproductible est : facturation électronique obligatoire + suites de facturation qui ne
+relancent pas + aucun acteur dédié en langue locale.
+
+| Pays | Devise | Concurrence locale | Verdict |
+|---|---|---|---|
+| Pologne | PLN | **Saturée** — Windykator.ai, FakturaNaCzas, Flobo, SARA ; voicebots IA en polonais, KSeF intégré | À éviter |
+| Roumanie | RON | Faible — seulement des suites de facturation (FGO 170 k entreprises, Factureaza 67 k) | **Cible n° 1** (UE, RO e-Factura) |
+| Tchéquie | CZK | Faible — Fakturoid, iDoklad : la relance est une option | Cible n° 2 |
+| Croatie | **EUR** | Faible | Pas de verrou de devise |
+| Serbie | RSD | Inconnue | Hors UE : analyse juridique distincte, à traiter après |
+
+**Verrous restants à l'export**, par ordre de gravité : droit français câblé dans les modèles (article L441-10,
+indemnité de 40 €, taux BCE) ; aucune couche i18n (`lib/format.ts` force `fr-FR` et `Europe/Paris`) ;
+identifiant d'entreprise limité au SIREN (Roumanie : CUI, Serbie : PIB). La directive 2011/7/UE étant
+transposée dans toute l'Union, c'est la **référence citée** qu'il faut paramétrer par pays, pas le
+raisonnement du moteur.
+
+### Devise de travail de l'organisation (20/09/2026)
+
+- `dashboard_summary()` et `list_debtors()` filtraient `currency = 'EUR'` **en dur** : hors zone euro, tous les
+  indicateurs et tous les encours par client tombaient à zéro. `organizations.default_currency` (ISO 4217,
+  euro par défaut) porte désormais la devise de travail, et `private.working_currency()` la sert aux deux
+  fonctions.
+- **Rien n'est jamais converti** : additionner des devises serait faux. Les factures libellées autrement sont
+  comptées par `other_currency_count` et l'écran le dit explicitement, au lieu de les taire.
+- `private.working_currency()` s'appuie sur `coalesce(min(...), 'EUR')`, **jamais sur un `limit 1`** : sans
+  agrégat, un compte orphelin (provisionnement interrompu) renvoyait `currency: null`, que la validation Zod
+  refuse — le tableau de bord tombait en erreur au lieu d'afficher des totaux à zéro. Constat de la revue base.
+- `formatCurrency(montant, devise)` a un paramètre par défaut à `"EUR"` : **un oubli d'argument ne lève donc
+  aucune erreur de type**. C'est ainsi que le graphique d'ancienneté et la fiche débiteur affichaient des euros
+  sur des montants en lei. À surveiller à chaque nouvel écran montrant des montants.
+- Dette assumée : `lib/dashboard/summary.ts` donne des valeurs par défaut (`currency`, `other_currency_count`)
+  pour survivre à un déploiement du code avant la migration. À retirer une fois la migration partout appliquée,
+  sinon une régression future de la fonction SQL serait masquée en silence.
+
+### Invitations d'équipe (20/09/2026)
+
+- L'écran Équipe était en lecture seule, donc les limites d'utilisateurs annoncées par les offres n'avaient
+  aucun sens. Une invitation est un **lien porteur d'un jeton à usage unique** (32 octets, hexadécimal) dont
+  seule l'empreinte SHA-256 est stockée. Relia **n'envoie aucun e-mail** : le responsable transmet le lien comme
+  il l'entend, ce qui évite d'ajouter un service d'envoi au parcours.
+- L'**adresse invitée doit correspondre à celle du compte qui accepte** : un lien transmis par erreur ne donne
+  accès à rien. Un jeton invalide, expiré ou déjà servi renvoie le **même** message, pour ne rien révéler.
+- `public.create_invitation` (owner/admin), `public.accept_invitation` (compte sans organisation), et
+  `public.revoke_invitation`. Le rôle `owner` ne s'invite pas. Le journal garde le rôle et l'identifiant, jamais
+  l'adresse invitée (minimisation).
+- La page `/rejoindre` **affiche** l'invitation ; elle ne la consomme qu'à la soumission du formulaire — un
+  préchargement ou un aperçu de lien brûlerait sinon le jeton.
+- Variables locales des fonctions PL/pgSQL préfixées `v_` : qualifier une variable par le nom de la fonction
+  (`create_invitation.organization_id`) n'est pas résolu ici et produit « missing FROM-clause entry ».
+
+### Sous-agents (20/09/2026)
+
+Les revues `database-reviewer` et `security-reviewer` ont été lancées sur le chantier « devise » et ont trouvé
+ce que les 889 tests ne voyaient pas : la régression du compte orphelin, et trois écrans affichant « euros »
+sur des montants d'une autre devise. Les lancer **avant de commiter**, sur un périmètre nommé fichier par
+fichier, avec le modèle de menace explicite — un prompt vague rend un rapport vague.

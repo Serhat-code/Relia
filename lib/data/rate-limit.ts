@@ -18,6 +18,11 @@ export const RATE_LIMITS = {
   repliesCheck: { action: "replies.checked", max: 5, windowMinutes: 10 },
   /** Import CSV ou Factur-X (jusqu'à 2 000 factures chacun) : l'import se trace lui-même. */
   bulkImport: { action: "invoices.imported", max: 20, windowMinutes: 10 },
+  /**
+   * Invitations : `create_invitation` trace `team.invited`, qui sert donc de compteur. Généreux au
+   * regard de la plus grande offre (10 utilisateurs), mais borne une écriture autrement libre.
+   */
+  teamInvite: { action: "team.invited", max: 10, windowMinutes: 60 },
 } as const satisfies Record<string, Limit>;
 
 export async function isRateLimited(organizationId: string, limit: Limit): Promise<boolean> {

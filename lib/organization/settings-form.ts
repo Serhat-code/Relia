@@ -56,3 +56,9 @@ export function confirmsOrganizationName(typed: string, name: string): boolean {
   const normalize = (value: string) => value.trim().replace(/\s+/g, " ").toLocaleLowerCase("fr");
   return typed.trim() !== "" && normalize(typed) === normalize(name);
 }
+
+/** Rôles qu'une invitation peut accorder : jamais « propriétaire », qui se transmet à part. */
+export const INVITE_ROLES = [
+  { value: "member", label: "Membre — consulte et traite les relances" },
+  { value: "admin", label: "Administrateur — gère aussi les réglages et la boîte d'envoi" },
+] as const;

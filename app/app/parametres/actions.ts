@@ -4,11 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isPaidPlan } from "@/lib/billing/plans";
 import { createCheckoutUrl, createPortalUrl, type BillingRedirect } from "@/lib/data/billing";
+import { createInvitation, revokeInvitation } from "@/lib/data/invitations";
 import { eraseOrganization } from "@/lib/data/organization-erasure";
 import { updateOrganizationSettings, updateRetentionMonths } from "@/lib/data/organization-settings";
+import { isRateLimited, RATE_LIMITS } from "@/lib/data/rate-limit";
 import { requireMember } from "@/lib/data/session";
 import { readForm, type FormState } from "@/lib/forms/form-state";
-import { ORGANIZATION_FORM_FIELDS, parseOrganizationForm, parseRetention } from "@/lib/organization/settings-form";
+import { INVITE_ROLES, ORGANIZATION_FORM_FIELDS, parseOrganizationForm, parseRetention } from "@/lib/organization/settings-form";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /** Paramètres (§7). Réglages et abonnement réservés au propriétaire et aux administrateurs. */
@@ -89,4 +91,39 @@ export async function eraseOrganizationAction(_previous: FormState, formData: Fo
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut({ scope: "local" });
   redirect("/");
+}
+
+/**
+ * Invite une personne : renvoie le lien à transmettre, qui n'est affiché qu'une fois. Relia
+ * n'envoie pas d'e-mail — le responsable choisit le canal.
+ */
+export async function inviteMemberAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const member = await responsibleMember();
+  if (!member) return { status: "error", message: ROLE_ERROR };
+
+  const email = String(formData.get("email") ?? "").trim();
+  const role = String(formData.get("role") ?? "member");
+  if (!INVITE_ROLES.some((option) => option.value === role)) {
+    return { status: "error", message: "Rôle invalide." };
+  }
+  if (await isRateLimited(member.organization.id, RATE_LIMITS.teamInvite)) {
+    return { status: "error", message: "Trop d'invitations créées récemment. Réessayez dans une heure.", values: { email } };
+  }
+
+  const result = await createInvitation(email, role as (typeof INVITE_ROLES)[number]["value"]);
+  if (!result.ok) return { status: "error", message: result.error, values: { email } };
+
+  revalidatePath("/app/parametres");
+  // Le jeton ne transite qu'ici : la base n'en garde que l'empreinte, il ne sera plus jamais lisible.
+  return { status: "success", message: result.token };
+}
+
+export async function revokeInvitationAction(invitationId: string): Promise<{ ok: boolean; error?: string }> {
+  const member = await responsibleMember();
+  if (!member) return { ok: false, error: ROLE_ERROR };
+
+  const result = await revokeInvitation(invitationId);
+  if (!result.ok) return { ok: false, error: result.error };
+  revalidatePath("/app/parametres");
+  return { ok: true };
 }

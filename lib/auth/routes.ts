@@ -6,7 +6,15 @@ const GUEST_ONLY_PATHS = new Set(["/connexion", "/inscription", "/mot-de-passe-o
 const isAppPath = (pathname: string) => pathname === "/app" || pathname.startsWith("/app/");
 
 /** Pages d'authentification qui lisent la session (en plus de l'espace client). */
-const SESSION_AUTH_PATHS = new Set(["/connexion", "/inscription", "/inscription/finaliser", "/mot-de-passe-oublie", "/reinitialiser"]);
+const SESSION_AUTH_PATHS = new Set([
+  "/connexion",
+  "/inscription",
+  "/inscription/finaliser",
+  "/mot-de-passe-oublie",
+  "/reinitialiser",
+  // Lien d'invitation : la page décide quoi afficher selon l'état de connexion.
+  "/rejoindre",
+]);
 
 /** Vrai si la page a besoin de la session : elle est rafraîchie par le middleware, les autres pages n'y touchent pas. */
 export const needsSession = (pathname: string) => isAppPath(pathname) || SESSION_AUTH_PATHS.has(pathname);
