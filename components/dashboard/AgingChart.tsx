@@ -9,7 +9,7 @@ const percent = (share: number) => `${Math.round(share * 100)} %`;
  * une colonne à elle : la barre se partage l'espace restant, même sur un écran étroit. La part du retard
  * total s'affiche au survol ou au clavier, et reste lue par les lecteurs d'écran.
  */
-export function AgingChart({ buckets }: { buckets: readonly AgingBucket[] }) {
+export function AgingChart({ buckets, currency }: { buckets: readonly AgingBucket[]; currency: string }) {
   const largest = Math.max(...buckets.map((bucket) => bucket.amount), 0);
 
   return (
@@ -33,7 +33,7 @@ export function AgingChart({ buckets }: { buckets: readonly AgingBucket[] }) {
               )}
             </div>
             <span className={bucket.amount > 0 ? "text-sm text-fg tabular-nums" : "text-sm text-fg-muted tabular-nums"}>
-              {formatCurrency(bucket.amount)}
+              {formatCurrency(bucket.amount, currency)}
               <span className="sr-only">, soit {percent(bucket.share)} du montant en retard</span>
             </span>
             <span

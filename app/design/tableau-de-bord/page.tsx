@@ -13,6 +13,9 @@ const TODAY = "2026-09-21";
 
 // Démonstration interne du palier 12 (sans base de données) : même forme que public.dashboard_summary().
 const SUMMARY = parseDashboardSummary({
+  currency: "EUR",
+  // Deux factures hors devise de travail : la mention correspondante doit apparaître sous les cartes.
+  other_currency_count: 2,
   open_amount: 48230.5,
   open_count: 23,
   late_amount: 17640,

@@ -5,15 +5,34 @@ describe("parseOrganizationForm", () => {
   it("normalise le SIREN et accepte son absence", () => {
     expect(parseOrganizationForm({ name: "  Atelier Démo ", siren: "732 829 320" })).toEqual({
       ok: true,
-      value: { name: "Atelier Démo", siren: "732829320" },
+      value: { name: "Atelier Démo", siren: "732829320", currency: "EUR" },
     });
-    expect(parseOrganizationForm({ name: "Atelier Démo", siren: "" })).toEqual({ ok: true, value: { name: "Atelier Démo", siren: null } });
+    expect(parseOrganizationForm({ name: "Atelier Démo", siren: "" })).toEqual({
+      ok: true,
+      value: { name: "Atelier Démo", siren: null, currency: "EUR" },
+    });
   });
 
   it("refuse un nom vide et un SIREN dont la clé est fausse", () => {
     expect(parseOrganizationForm({ name: " ", siren: "732829321" })).toEqual({
       ok: false,
       fieldErrors: { name: "Indiquez le nom de votre entreprise.", siren: "SIREN invalide : 9 chiffres." },
+    });
+  });
+
+  it("retient la devise de travail, en majuscules, et l'euro à défaut", () => {
+    expect(parseOrganizationForm({ name: "Atelier Bucarest", siren: "", currency: "ron" })).toMatchObject({
+      ok: true,
+      value: { currency: "RON" },
+    });
+    expect(parseOrganizationForm({ name: "Atelier Démo", siren: "" })).toMatchObject({ ok: true, value: { currency: "EUR" } });
+  });
+
+  it("refuse une devise qui n'est pas un code ISO connu", () => {
+    // « UDS » pour « USD » : une faute de frappe ne doit pas devenir la devise de l'organisation.
+    expect(parseOrganizationForm({ name: "Atelier Démo", siren: "", currency: "UDS" })).toMatchObject({
+      ok: false,
+      fieldErrors: { currency: expect.stringContaining("Devise inconnue") },
     });
   });
 });

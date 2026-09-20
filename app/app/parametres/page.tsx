@@ -85,7 +85,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <CardDescription>Le nom et le SIREN qui signent vos relances.</CardDescription>
               </CardHeader>
               <CardContent>
-                <OrganizationForm name={organization.name} siren={organization.siren} canManage={canManage} />
+                <OrganizationForm name={organization.name} siren={organization.siren} currency={organization.defaultCurrency} canManage={canManage} />
               </CardContent>
             </Card>
           </Reveal>

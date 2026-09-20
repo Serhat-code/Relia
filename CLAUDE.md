@@ -5,7 +5,12 @@
 > Garde-le ensuite comme CLAUDE.md du repo : c'est la référence permanente du projet.
 
 ---
+## Sous-agents
 
+Choisis et utilise proactivement les sous-agents disponibles dans
+`~/.claude/agents` lorsque leur spécialité correspond à la tâche.
+Utilise-les pour les revues ciblées et les chantiers indépendants,
+sans demander à l’utilisateur de les nommer.
 ## 1. Mission
 
 Construire **Relia**, un SaaS français de **relance automatisée des factures impayées**, destiné aux TPE, PME, freelances et agences.

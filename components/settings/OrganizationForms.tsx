@@ -5,6 +5,7 @@ import { updateOrganizationAction, updateRetentionAction } from "@/app/app/param
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { WORKING_CURRENCIES } from "@/lib/currency";
 import { IDLE_STATE, type FormState } from "@/lib/forms/form-state";
 import { RETENTION_OPTIONS } from "@/lib/organization/settings-form";
 
@@ -14,10 +15,10 @@ function Feedback({ state }: { state: FormState }) {
   return null;
 }
 
-type OrganizationFormProps = { name: string; siren: string | null; canManage: boolean };
+type OrganizationFormProps = { name: string; siren: string | null; currency: string; canManage: boolean };
 
-/** Nom et SIREN de l'organisation (le SIREN figure sur les relances professionnelles). */
-export function OrganizationForm({ name, siren, canManage }: OrganizationFormProps) {
+/** Nom, SIREN et devise de travail (le SIREN figure sur les relances professionnelles). */
+export function OrganizationForm({ name, siren, currency, canManage }: OrganizationFormProps) {
   const [state, formAction, isPending] = useActionState(updateOrganizationAction, IDLE_STATE);
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
   const values = state.status === "error" ? (state.values ?? {}) : {};
@@ -31,6 +32,19 @@ export function OrganizationForm({ name, siren, canManage }: OrganizationFormPro
         </Field>
         <Field label="SIREN" hint="9 chiffres, facultatif." error={errors.siren}>
           <Input name="siren" inputMode="numeric" defaultValue={values.siren ?? siren ?? ""} disabled={!canManage} />
+        </Field>
+        <Field
+          label="Devise de travail"
+          hint="Celle de votre tableau de bord. Les factures d'une autre devise ne sont jamais converties."
+          error={errors.currency}
+        >
+          <Select name="currency" defaultValue={values.currency ?? currency} disabled={!canManage}>
+            {WORKING_CURRENCIES.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </Field>
       </div>
       {canManage && (

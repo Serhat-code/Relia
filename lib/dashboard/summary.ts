@@ -2,7 +2,9 @@ import { z } from "zod";
 
 /**
  * Tableau de bord (§5.7) : lecture de public.dashboard_summary(), calculée par la base sur les seules
- * factures de l'organisation. Montants en euros ; les autres devises ne s'additionnent pas.
+ * factures de l'organisation. La synthèse porte sur la devise de travail de l'organisation ; les
+ * factures libellées autrement sont comptées à part et jamais converties — additionner des devises
+ * serait faux.
  */
 
 /** Période du DSO : le facturé des 90 derniers jours sert de base. */
@@ -24,6 +26,9 @@ const atRiskSchema = z.object({
 });
 
 const summarySchema = z.object({
+  // Valeurs par défaut : le code peut être déployé avant que la migration ne soit appliquée.
+  currency: z.string().length(3).default("EUR"),
+  other_currency_count: z.number().int().nonnegative().default(0),
   open_amount: amount,
   open_count: z.number().int().nonnegative(),
   late_amount: amount,
@@ -48,6 +53,10 @@ export type AtRiskInvoice = {
 export type AgingBucket = { label: (typeof AGING_BUCKETS)[number]; amount: number; share: number };
 
 export type DashboardSummary = {
+  /** Devise de travail de l'organisation : tous les montants ci-dessous sont libellés ainsi. */
+  currency: string;
+  /** Factures en cours dans une autre devise, volontairement exclues des totaux. */
+  otherCurrencyCount: number;
   openAmount: number;
   openCount: number;
   lateAmount: number;
@@ -80,6 +89,8 @@ export function parseDashboardSummary(raw: unknown): DashboardSummary | null {
   const agingTotal = data.aging.reduce((sum, value) => sum + value, 0);
 
   return {
+    currency: data.currency,
+    otherCurrencyCount: data.other_currency_count,
     openAmount: data.open_amount,
     openCount: data.open_count,
     lateAmount: data.late_amount,

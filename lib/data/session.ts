@@ -15,6 +15,8 @@ export type CurrentMember = {
     siren: string | null;
     plan: Enums<"plan_tier">;
     retentionMonths: number;
+    /** Devise de travail : celle des synthèses du tableau de bord. */
+    defaultCurrency: string;
     billing: {
       trialEndsAt: string;
       subscriptionStatus: string | null;
@@ -45,7 +47,7 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     .from("users")
     .select(
       `id, email, full_name, role, organization:organizations (
-        id, name, siren, plan, retention_months, trial_ends_at, subscription_status, current_period_end,
+        id, name, siren, plan, retention_months, default_currency, trial_ends_at, subscription_status, current_period_end,
         cancel_at_period_end, stripe_customer_id
       )`,
     )
@@ -71,6 +73,7 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
         siren: data.organization.siren,
         plan: data.organization.plan,
         retentionMonths: data.organization.retention_months,
+        defaultCurrency: data.organization.default_currency,
         billing: {
           trialEndsAt: data.organization.trial_ends_at,
           subscriptionStatus: data.organization.subscription_status,

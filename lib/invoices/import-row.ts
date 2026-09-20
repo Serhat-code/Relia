@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isKnownCurrency } from "@/lib/currency";
 import { isValidSiren } from "@/lib/siren";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -7,9 +8,6 @@ export const MAX_IMPORT_ROWS = 2000;
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide.");
 const amount = z.number().nonnegative("Montant négatif.").max(100_000_000, "Montant trop élevé.");
-
-/** Codes ISO 4217 connus : une faute de frappe (« UDS ») est refusée plutôt qu'importée. */
-const KNOWN_CURRENCIES: ReadonlySet<string> = new Set(Intl.supportedValuesOf("currency"));
 
 const nullableAmount = z.number().finite().nullable();
 
@@ -40,7 +38,7 @@ export const importRowSchema = z
     amountTtc: amount,
     currency: z
       .string()
-      .refine((code) => KNOWN_CURRENCIES.has(code), "Devise inconnue : indiquez un code à 3 lettres, par exemple EUR."),
+      .refine((code) => isKnownCurrency(code), "Devise inconnue : indiquez un code à 3 lettres, par exemple EUR."),
     issuedAt: isoDate,
     dueAt: isoDate,
     paidAt: isoDate.nullable(),

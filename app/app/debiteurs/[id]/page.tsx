@@ -60,13 +60,20 @@ export default async function DebtorPage({ params }: PageProps) {
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Reveal index={1}>
-            <StatCard label="Encours" value={amounts.open} format="currency" icon={<Wallet aria-hidden />} />
+            <StatCard
+              label="Encours"
+              value={amounts.open}
+              format="currency"
+              currency={member.organization.defaultCurrency}
+              icon={<Wallet aria-hidden />}
+            />
           </Reveal>
           <Reveal index={2}>
             <StatCard
               label="En retard"
               value={amounts.late}
               format="currency"
+              currency={member.organization.defaultCurrency}
               tone={amounts.late > 0 ? "danger" : "neutral"}
               icon={<CircleAlert aria-hidden />}
             />

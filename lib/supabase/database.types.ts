@@ -223,6 +223,60 @@ export type Database = {
           },
         ];
       };
+      invitations: {
+        Row: {
+          accepted_at: string | null;
+          accepted_by: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          invited_by: string;
+          organization_id: string;
+          role: Database["public"]["Enums"]["member_role"];
+          token_hash: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          id?: string;
+          invited_by: string;
+          organization_id: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          token_hash: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          accepted_by?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          invited_by?: string;
+          organization_id?: string;
+          role?: Database["public"]["Enums"]["member_role"];
+          token_hash?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "invitations_invited_by_fkey";
+            columns: ["invited_by", "organization_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id", "organization_id"];
+          },
+          {
+            foreignKeyName: "invitations_organization_id_fkey";
+            columns: ["organization_id"];
+            isOneToOne: false;
+            referencedRelation: "organizations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       invoices: {
         Row: {
           amount_ht: number;
@@ -304,6 +358,7 @@ export type Database = {
           cancel_at_period_end: boolean;
           created_at: string;
           current_period_end: string | null;
+          default_currency: string;
           dpa_accepted_at: string;
           dpa_ip: string;
           dpa_version: string;
@@ -322,6 +377,7 @@ export type Database = {
           cancel_at_period_end?: boolean;
           created_at?: string;
           current_period_end?: string | null;
+          default_currency?: string;
           dpa_accepted_at: string;
           dpa_ip: string;
           dpa_version: string;
@@ -340,6 +396,7 @@ export type Database = {
           cancel_at_period_end?: boolean;
           created_at?: string;
           current_period_end?: string | null;
+          default_currency?: string;
           dpa_accepted_at?: string;
           dpa_ip?: string;
           dpa_version?: string;
@@ -744,6 +801,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      accept_invitation: {
+        Args: { p_token: string };
+        Returns: string;
+      };
       apply_stripe_subscription: {
         Args: { p_organization_id: string; p_customer_id: string; p_subscription_id: string; p_plan: Database["public"]["Enums"]["plan_tier"]; p_status: string; p_cancel_at_period_end: boolean; p_current_period_end?: string };
         Returns: undefined;
@@ -767,6 +828,10 @@ export type Database = {
       claim_reminder: {
         Args: { p_reminder_id: string };
         Returns: Database["public"]["Tables"]["reminders"]["Row"][];
+      };
+      create_invitation: {
+        Args: { p_email: string; p_role?: Database["public"]["Enums"]["member_role"] };
+        Returns: { invitation_id: string; token: string }[];
       };
       dashboard_summary: {
         Args: Record<PropertyKey, never>;
@@ -838,6 +903,10 @@ export type Database = {
       };
       resume_reminders: {
         Args: { p_invoice_id: string };
+        Returns: undefined;
+      };
+      revoke_invitation: {
+        Args: { p_invitation_id: string };
         Returns: undefined;
       };
       save_sequence_steps: {

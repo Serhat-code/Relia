@@ -8,6 +8,7 @@ const SCHEMA_TABLES = [
   "debtors",
   "email_accounts",
   "integrations",
+  "invitations",
   "invoices",
   "organizations",
   "promises",

@@ -12,7 +12,7 @@ const BUCKETS: AgingBucket[] = [
 
 describe("AgingChart", () => {
   it("écrit chaque tranche et sa part du retard, lue par les lecteurs d'écran", () => {
-    render(<AgingChart buckets={BUCKETS} />);
+    render(<AgingChart buckets={BUCKETS} currency="EUR" />);
 
     const items = screen.getAllByRole("listitem");
     expect(items).toHaveLength(4);
@@ -21,7 +21,7 @@ describe("AgingChart", () => {
   });
 
   it("dimensionne les barres par rapport à la plus grande tranche, sans barre pour une tranche vide", () => {
-    const { container } = render(<AgingChart buckets={BUCKETS} />);
+    const { container } = render(<AgingChart buckets={BUCKETS} currency="EUR" />);
 
     const bars = container.querySelectorAll<HTMLElement>("li span.bg-accent");
     expect([...bars].map((bar) => bar.style.width)).toEqual(["100%", "50%", "16.666666666666664%"]);

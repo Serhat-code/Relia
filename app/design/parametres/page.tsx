@@ -24,6 +24,7 @@ function demoOrganization(): CurrentMember["organization"] {
     siren: "732829320",
     plan: "trial",
     retentionMonths: 36,
+    defaultCurrency: "EUR",
     billing: {
       trialEndsAt: new Date(Date.now() + 2.5 * DAY_MS).toISOString(),
       subscriptionStatus: null,
@@ -67,7 +68,7 @@ export default function SettingsDemoPage() {
                 <CardDescription>Le nom et le SIREN qui signent vos relances.</CardDescription>
               </CardHeader>
               <CardContent>
-                <OrganizationForm name={organization.name} siren={organization.siren} canManage />
+                <OrganizationForm name={organization.name} siren={organization.siren} currency="RON" canManage />
               </CardContent>
             </Card>
           </Reveal>

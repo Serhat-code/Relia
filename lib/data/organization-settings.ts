@@ -27,7 +27,11 @@ export type SettingsMutation = { ok: true } | { ok: false; error: string };
 
 type Actor = { organizationId: string; userId: string };
 
-async function update(actor: Actor, values: { name?: string; siren?: string | null; retention_months?: number }, action: string) {
+async function update(
+  actor: Actor,
+  values: { name?: string; siren?: string | null; retention_months?: number; default_currency?: string },
+  action: string,
+) {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("organizations").update(values).eq("id", actor.organizationId).select("id");
   if (error || data.length === 0) {
@@ -48,7 +52,11 @@ async function update(actor: Actor, values: { name?: string; siren?: string | nu
 }
 
 export function updateOrganizationSettings(actor: Actor, settings: OrganizationSettings): Promise<SettingsMutation> {
-  return update(actor, { name: settings.name, siren: settings.siren }, "organization.updated");
+  return update(
+    actor,
+    { name: settings.name, siren: settings.siren, default_currency: settings.currency },
+    "organization.updated",
+  );
 }
 
 export function updateRetentionMonths(actor: Actor, months: number): Promise<SettingsMutation> {

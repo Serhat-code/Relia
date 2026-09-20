@@ -66,3 +66,20 @@ describe("parseDashboardSummary", () => {
     expect(parseDashboardSummary(null)).toBeNull();
   });
 });
+
+describe("devise de travail", () => {
+  it("retient la devise de l'organisation et le nombre de factures écartées", () => {
+    const summary = parseDashboardSummary({ ...RAW, currency: "RON", other_currency_count: 4 });
+
+    expect(summary?.currency).toBe("RON");
+    expect(summary?.otherCurrencyCount).toBe(4);
+  });
+
+  it("retombe sur l'euro si la base ne renvoie pas encore ces champs", () => {
+    // Le code peut être déployé avant que la migration ne soit appliquée.
+    const summary = parseDashboardSummary(RAW);
+
+    expect(summary?.currency).toBe("EUR");
+    expect(summary?.otherCurrencyCount).toBe(0);
+  });
+});

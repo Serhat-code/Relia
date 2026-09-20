@@ -1,7 +1,7 @@
 "use client";
 
 import { animate } from "motion/react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
 import { EASE_STANDARD, MAX_UI_DURATION } from "@/lib/design/motion";
 import { formatCurrency, formatDays, formatNumber } from "@/lib/format";
@@ -9,8 +9,7 @@ import { usePrefersReducedMotion } from "@/lib/hooks/use-prefers-reduced-motion"
 
 export type NumberFormat = "currency" | "number" | "days";
 
-const FORMATTERS: Record<NumberFormat, (value: number) => string> = {
-  currency: (value) => formatCurrency(value),
+const PLAIN_FORMATTERS: Record<Exclude<NumberFormat, "currency">, (value: number) => string> = {
   number: formatNumber,
   days: formatDays,
 };
@@ -29,6 +28,8 @@ function useIsClientMount(): boolean {
 type AnimatedNumberProps = {
   value: number;
   format: NumberFormat;
+  /** Devise ISO 4217 pour `format="currency"` : celle de l'organisation, pas l'euro par défaut. */
+  currency?: string;
   className?: string;
 };
 
@@ -37,8 +38,11 @@ type AnimatedNumberProps = {
  * valeurs intermédiaires. Au rendu serveur, la vraie valeur s'affiche d'emblée : le
  * comptage depuis 0 n'a lieu que pour un montage côté client (navigation).
  */
-export function AnimatedNumber({ value, format, className }: AnimatedNumberProps) {
-  const formatValue = FORMATTERS[format];
+export function AnimatedNumber({ value, format, currency = "EUR", className }: AnimatedNumberProps) {
+  const formatValue = useCallback(
+    (amount: number) => (format === "currency" ? formatCurrency(amount, currency) : PLAIN_FORMATTERS[format](amount)),
+    [format, currency],
+  );
   const isClientMount = useIsClientMount();
   const prefersReducedMotion = usePrefersReducedMotion();
   const [initialValue] = useState(() => (isClientMount && !prefersReducedMotion ? 0 : value));

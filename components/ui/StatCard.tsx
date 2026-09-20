@@ -16,6 +16,8 @@ type StatCardProps = {
   /** Null : valeur non calculable (affichée « — », dite « non disponible »). */
   value: number | null;
   format: NumberFormat;
+  /** Devise ISO 4217 pour `format="currency"`. */
+  currency?: string;
   tone?: StatTone;
   icon?: ReactNode;
   hint?: ReactNode;
@@ -23,7 +25,7 @@ type StatCardProps = {
 };
 
 /** Carte de statistique : compteur animé au montage, léger dégradé qui dérive en fond (CLAUDE.md §6). */
-export function StatCard({ label, value, format, tone = "neutral", icon, hint, className }: StatCardProps) {
+export function StatCard({ label, value, format, currency, tone = "neutral", icon, hint, className }: StatCardProps) {
   return (
     <Card className={cn("relative overflow-hidden p-6", className)}>
       <div
@@ -41,7 +43,12 @@ export function StatCard({ label, value, format, tone = "neutral", icon, hint, c
             <span className="sr-only">Non disponible</span>
           </span>
         ) : (
-          <AnimatedNumber value={value} format={format} className={cn("font-display text-xl font-semibold", TONES[tone])} />
+          <AnimatedNumber
+            value={value}
+            format={format}
+            currency={currency}
+            className={cn("font-display text-xl font-semibold", TONES[tone])}
+          />
         )}
         {hint && <div className="text-xs text-fg-muted">{hint}</div>}
       </div>

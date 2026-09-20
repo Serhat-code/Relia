@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={name ? `Bonjour ${name}` : "Bonjour"}
-        description="Voici où en sont les règlements de vos clients. Montants en euros, toutes taxes comprises."
+        description={`Voici où en sont les règlements de vos clients. Montants en ${dashboard.summary.currency}, toutes taxes comprises.`}
       />
       <div className="flex flex-col gap-6">
         {!isOnboarded && (
