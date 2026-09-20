@@ -1,0 +1,101 @@
+/*
+ * ReliaLoader — la rotation est du CSS pur : le chargement s'anime dès le premier
+ * rendu serveur, avant l'hydratation. La séquence de succès est jouée en JavaScript
+ * (loader-motion.ts), qui lit l'angle réel des arcs pour converger sans à-coup.
+ */
+
+.root {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* --home, --spin-duration et --spin-direction sont posés par arc (lib/brand/ring.ts). */
+.arc {
+  transform-box: view-box;
+  transform-origin: 24px 24px;
+  transform: rotate(var(--home));
+}
+
+.root[data-state="loading"] .arc {
+  animation: spin var(--spin-duration) linear infinite;
+  animation-direction: var(--spin-direction);
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(var(--home));
+  }
+  to {
+    transform: rotate(calc(var(--home) + 360deg));
+  }
+}
+
+/* Couche du dégradé mouvant : visible pendant le chargement, fondue au succès. */
+.flow {
+  transition: opacity 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.root[data-state="success"] .flow {
+  opacity: 0;
+}
+
+/* Onde lumineuse du succès, jouée une fois. */
+.wave {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--secondary);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--secondary) 55%, transparent);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.root[data-tone="current"] .wave {
+  border-color: currentColor;
+  box-shadow: 0 0 10px 1px color-mix(in srgb, currentColor 45%, transparent);
+}
+
+/* Mouvement réduit : pas de rotation, opacité pulsée douce uniquement (1,6 s, 55 %). */
+@media (prefers-reduced-motion: reduce) {
+  .root[data-state="loading"] .arc {
+    animation: none;
+  }
+
+  .flow {
+    display: none;
+  }
+
+  .root[data-state="loading"] .ring {
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+}
+
+.root[data-reduced-motion][data-state="loading"] .arc {
+  animation: none;
+}
+
+.root[data-reduced-motion] .flow {
+  display: none;
+}
+
+.root[data-reduced-motion][data-state="loading"] .ring {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}

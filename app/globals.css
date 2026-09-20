@@ -1,0 +1,307 @@
+@import "tailwindcss";
+
+/* Les tests citent des noms de classes : ne pas les compiler dans le CSS livré. */
+@source not "../tests";
+@source not "../**/*.test.{ts,tsx}";
+
+/*
+ * Jetons de design Relia — source unique de vérité (CLAUDE.md §6).
+ *
+ * Les variables brutes (--bg, --accent…) portent les noms du cahier des charges.
+ * Elles sont exposées à Tailwind sous des noms d'utilitaires lisibles :
+ *   --bg          → bg-canvas        --text        → text-fg
+ *   --bg-elevated → bg-elevated      --text-muted  → text-fg-muted
+ *   --border-glow → border-glow      --text-subtle → text-fg-subtle
+ *
+ * Un sous-arbre peut forcer un thème avec data-theme="light" | "dark" :
+ * les utilitaires résolvent les variables à l'endroit où elles sont utilisées.
+ *
+ * Règles de contraste (vérifiées par tests/design/theme-tokens.test.ts) :
+ *   - texte de lien : --accent-text (text-link), jamais --accent, qui plafonne à ~4,4:1 ;
+ *   - --text-subtle (≥ 3:1) : grands textes, icônes, champs désactivés, textes d'exemple
+ *     uniquement, et jamais sur --surface. Tout texte lisible : --text-muted au minimum.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/* ── Thème sombre : thème par défaut de l'application ─────────────────── */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #070B14;
+  --bg-elevated: #0E1526;
+  --surface: #16203A;
+  --border: #243250;
+  --border-glow: #2F6BFF33;
+
+  --accent: #2F6BFF;
+  --accent-hover: #4B82FF;
+  --accent-soft: #2F6BFF1A;
+  --accent-fg: #FFFFFF;
+  --accent-text: #4B82FF;
+  --secondary: #00E5C2;
+
+  --success: #22D18C;
+  --warning: #FFB020;
+  --danger: #FF4D6A;
+  --danger-fg: #070B14;
+
+  --text: #E8EEF9;
+  --text-muted: #8A9BB8;
+  --text-subtle: #5A6B88;
+
+  --gradient-brand: linear-gradient(135deg, #2F6BFF 0%, #00E5C2 100%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, #2F6BFF26 0%, transparent 70%);
+
+  --elevation-raised: inset 0 1px 0 0 #FFFFFF0A, 0 12px 32px -16px #000000B3;
+  --elevation-glow: 0 0 0 1px #2F6BFF33, 0 0 28px -6px #2F6BFF59;
+}
+
+/*
+ * ── Thème clair : mêmes accents, fonds et textes inversés ────────────────
+ * Les couleurs d'état sont assombries pour rester lisibles sur fond clair
+ * (contraste ≥ 4,5:1). --secondary reste décoratif : jamais pour du texte.
+ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #FAFBFD;
+  --bg-elevated: #FFFFFF;
+  --surface: #F1F4F9;
+  --border: #DCE3EE;
+  --border-glow: #2F6BFF40;
+
+  --accent: #2F6BFF;
+  --accent-hover: #1F5AF0;
+  --accent-soft: #2F6BFF14;
+  --accent-fg: #FFFFFF;
+  --accent-text: #1F5AF0;
+  --secondary: #00E5C2;
+
+  --success: #0B8053;
+  --warning: #A15F00;
+  --danger: #D6294A;
+  --danger-fg: #FFFFFF;
+
+  --text: #0B1220;
+  --text-muted: #4A5A78;
+  --text-subtle: #66758F;
+
+  --gradient-brand: linear-gradient(135deg, #2F6BFF 0%, #00E5C2 100%);
+  --gradient-glow: radial-gradient(circle at 50% 0%, #2F6BFF14 0%, transparent 70%);
+
+  --elevation-raised: 0 1px 2px #0B12200D, 0 12px 28px -16px #0B122033;
+  --elevation-glow: 0 0 0 1px #2F6BFF40, 0 0 24px -8px #2F6BFF40;
+}
+
+/* Palette fermée : seuls les jetons Relia existent, pas les couleurs Tailwind. */
+@theme {
+  --color-*: initial;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+
+  /* Échelle typographique imposée : 12 / 14 / 16 / 20 / 28 / 40 / 56 */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.75rem;
+  --text-xl--line-height: 2.125rem;
+  --text-xl--letter-spacing: -0.01em;
+  --text-2xl: 2.5rem;
+  --text-2xl--line-height: 2.75rem;
+  --text-2xl--letter-spacing: -0.02em;
+  --text-3xl: 3.5rem;
+  --text-3xl--line-height: 3.75rem;
+  --text-3xl--letter-spacing: -0.03em;
+
+  /*
+   * Mouvement : courbe standard, rien au-delà de 400 ms hors loader.
+   * Classes duration-hover / duration-enter / duration-page ; jumelles TS dans lib/design/motion.ts.
+   */
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --transition-duration-hover: 220ms; /* survol, pression */
+  --transition-duration-enter: 280ms; /* apparitions, toasts */
+  --transition-duration-page: 320ms; /* transitions de page */
+  --default-transition-duration: 220ms;
+  --default-transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-glow-drift: glow-drift 20s ease-in-out infinite alternate;
+  --animate-status-pulse: status-pulse 2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-row-in: row-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-stat-drift: stat-drift 16s ease-in-out infinite alternate;
+  --animate-page-in: page-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  /* Pastille « en retard » : un halo s'éloigne doucement du point. */
+  @keyframes status-pulse {
+    from {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    to {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+
+  /* Squelettes : balayage lumineux de gauche à droite. */
+  @keyframes shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Transitions de page : fondu + translation verticale de 8 px, blocs en cascade (40 ms). */
+  @keyframes page-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+
+  /* Lignes de tableau : apparition en cascade à l'arrivée. */
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+
+  /* Cartes de statistiques : le dégradé de fond dérive lentement. */
+  @keyframes stat-drift {
+    from {
+      background-position: 0% 0%;
+    }
+    to {
+      background-position: 100% 100%;
+    }
+  }
+
+  @keyframes glow-drift {
+    from {
+      transform: translate3d(-3%, -2%, 0) scale(1);
+      opacity: 0.8;
+    }
+    to {
+      transform: translate3d(3%, 1%, 0) scale(1.08);
+      opacity: 1;
+    }
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-glow: var(--border-glow);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+  --color-link: var(--accent-text);
+  --color-secondary: var(--secondary);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-danger-fg: var(--danger-fg);
+
+  --color-fg: var(--text);
+  --color-fg-muted: var(--text-muted);
+  --color-fg-subtle: var(--text-subtle);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, sans-serif;
+
+  --shadow-raised: var(--elevation-raised);
+  --shadow-halo: var(--elevation-glow);
+}
+
+/*
+ * Utilitaires maison : jamais un nom de la forme <préfixe>-<couleur> (bg-glow, text-accent…),
+ * sinon Tailwind génère aussi l'utilitaire de couleur et les deux s'additionnent.
+ * Vérifié par tests/design/theme-tokens.test.ts.
+ */
+@utility bg-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+@utility bg-gradient-glow {
+  background-image: var(--gradient-glow);
+}
+
+@utility text-gradient-brand {
+  background-image: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Fond des cartes de statistiques : deux halos, animés par animate-stat-drift. */
+@utility bg-stat-glow {
+  background-image:
+    radial-gradient(60% 80% at 0% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    radial-gradient(50% 70% at 100% 100%, color-mix(in srgb, var(--secondary) 9%, transparent), transparent 70%);
+  background-size: 200% 200%;
+}
+
+@layer base {
+  /* Le fond est porté par <html> pour que le halo décoratif (z-index négatif) reste visible. */
+  html {
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* La barre de défilement garde sa place : rien ne bouge quand une modale bloque le défilement. */
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+  }
+
+  /* Montants et dates : chiffres tabulaires obligatoires (sinon les colonnes dansent). */
+  table,
+  time,
+  data,
+  output,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}

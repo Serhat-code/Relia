@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirmez votre adresse e-mail</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f1f4f9;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;color:#0b1220;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f4f9;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #dce3ee;border-radius:16px;">
+            <tr>
+              <td style="padding:32px 32px 8px 32px;font-size:20px;font-weight:600;letter-spacing:-0.01em;">Relia</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 32px 0 32px;">
+                <h1 style="margin:0 0 12px 0;font-size:20px;line-height:28px;font-weight:600;">Confirmez votre adresse e-mail</h1>
+                <p style="margin:0 0 24px 0;font-size:15px;line-height:24px;color:#4a5a78;">Bienvenue sur Relia. Confirmez votre adresse pour activer votre compte et commencer le suivi de vos règlements.</p>
+                <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next=/app" style="display:inline-block;background:#2f6bff;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:12px 20px;border-radius:10px;">Confirmer mon adresse</a>
+                <p style="margin:24px 0 0 0;font-size:13px;line-height:20px;color:#4a5a78;">Ce lien est valable une heure.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:24px 32px 32px 32px;font-size:12px;line-height:18px;color:#4a5a78;">
+                Vous recevez ce message parce qu'une action a été demandée sur votre compte Relia.
+                Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet e-mail.
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

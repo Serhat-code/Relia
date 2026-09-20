@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["cdg1"],
+  "crons": [
+    { "path": "/api/cron/relances/preparer", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/relances/envoyer", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/reponses", "schedule": "*/30 * * * *" },
+    { "path": "/api/cron/purge", "schedule": "0 4 * * 0" }
+  ]
+}
