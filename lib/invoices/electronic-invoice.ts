@@ -24,11 +24,16 @@ const ERRORS = {
   tooLarge: "Ce fichier dépasse 10 Mo.",
 } as const;
 
-/** Élément racine, préfixe de namespace retiré : « rsm:CrossIndustryInvoice » → « CrossIndustryInvoice ». */
+/**
+ * Élément racine, préfixe de namespace retiré : « rsm:CrossIndustryInvoice » → « CrossIndustryInvoice ».
+ *
+ * Les commentaires et les instructions de traitement sont retirés d'abord : sans cela, un Factur-X
+ * parfaitement valide dont un commentaire mentionne `<Invoice>` partait vers le lecteur UBL et
+ * était rejeté.
+ */
 export function rootElement(xml: string): string | null {
-  // On saute la déclaration XML, les commentaires et les instructions de traitement.
-  const match = xml.match(/<\s*([A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/);
-  return match?.[2] && !/^(\?|!)/.test(match[2]) ? match[2] : null;
+  const cleaned = xml.replace(/<!--[\s\S]*?-->/g, "").replace(/<\?[\s\S]*?\?>/g, "");
+  return cleaned.match(/<\s*(?:[A-Za-z_][\w.-]*:)?([A-Za-z_][\w.-]*)/)?.[1] ?? null;
 }
 
 /** Choisit le lecteur d'après la racine du document. */

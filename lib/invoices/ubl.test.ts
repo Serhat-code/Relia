@@ -89,6 +89,20 @@ describe("choix de la syntaxe", () => {
     expect(rootElement("pas du xml")).toBeNull();
   });
 
+  it("ignore les commentaires et la déclaration, qui précèdent la racine", () => {
+    // Un Factur-X dont un commentaire mentionne <Invoice> partait vers le lecteur UBL.
+    expect(rootElement('<?xml version="1.0"?><!-- exemple : <Invoice> --><rsm:CrossIndustryInvoice/>')).toBe(
+      "CrossIndustryInvoice",
+    );
+    expect(rootElement("<!-- voir <CrossIndustryInvoice> --><Invoice/>")).toBe("Invoice");
+  });
+
+  it("un avoir reste refusé même précédé d'un commentaire trompeur", () => {
+    const disguised = "<!-- <Invoice/> -->" + ROMANIAN.replace(/ubl:Invoice/g, "ubl:CreditNote");
+
+    expect(parseElectronicInvoiceXml(disguised)).toEqual({ ok: false, error: expect.stringContaining("avoir") });
+  });
+
   it("oriente une facture UBL vers le bon lecteur", () => {
     expect(parseElectronicInvoiceXml(ROMANIAN)).toMatchObject({ ok: true });
   });
