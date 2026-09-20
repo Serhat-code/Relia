@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import { connectSmtpAction } from "@/app/app/boite-mail/actions";
 import { Button } from "@/components/ui/Button";
 import { Field, Input, Select } from "@/components/ui/Field";
@@ -14,13 +15,24 @@ import { IMAP_PORT } from "@/lib/mail/smtp-ports";
  * Repli SMTP : la messagerie du client, avec ses propres identifiants (chiffrés dans Vault). Le
  * serveur IMAP, facultatif, permet à Relia de lire les réponses de ses clients.
  */
+/** Laisse le temps de lire la confirmation avant de renvoyer au tableau de bord. */
+const REDIRECT_DELAY_MS = 2000;
+
 export function SmtpForm({ defaultSenderName }: { defaultSenderName: string }) {
   const [state, formAction, isPending] = useActionState(connectSmtpAction, IDLE_STATE);
+  const router = useRouter();
   const errors = state.status === "error" ? (state.fieldErrors ?? {}) : {};
   const values = state.status === "error" ? (state.values ?? {}) : {};
   const [host, setHost] = useState(values.host ?? "");
   const [port, setPort] = useState(values.port ?? "465");
   const [imapHost, setImapHost] = useState(values.imapHost ?? "");
+
+  // La boîte branchée, l'étape suivante de la prise en main est le tableau de bord.
+  useEffect(() => {
+    if (state.status !== "success") return;
+    const minuteur = setTimeout(() => router.push("/app"), REDIRECT_DELAY_MS);
+    return () => clearTimeout(minuteur);
+  }, [state.status, router]);
 
   const applyPreset = (label: string) => {
     const preset = SMTP_PRESETS.find((item) => item.label === label);
@@ -33,7 +45,11 @@ export function SmtpForm({ defaultSenderName }: { defaultSenderName: string }) {
   return (
     <form action={formAction} noValidate className="flex flex-col gap-5">
       {state.status === "error" && state.message && <FormMessage tone="error">{state.message}</FormMessage>}
-      {state.status === "success" && <FormMessage tone="success">{state.message}</FormMessage>}
+      {state.status === "success" && (
+        <FormMessage tone="success">
+          {state.message} Retour au tableau de bord…
+        </FormMessage>
+      )}
 
       <Field label="Votre messagerie" hint="Remplit les serveurs et le port ; vous pouvez les modifier.">
         <Select defaultValue="" onChange={(event) => applyPreset(event.target.value)}>

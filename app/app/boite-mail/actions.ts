@@ -52,11 +52,13 @@ export async function connectSmtpAction(_previous: FormState, formData: FormData
   const result = await saveSmtpMailbox({ organizationId: member.organization.id, userId: member.id }, settings);
   if (!result.ok) return { status: "error", message: result.error, values: safeValues };
   refreshMailboxPages();
+  // Le formulaire renvoie ensuite au tableau de bord : le message ne renvoie donc plus vers l'e-mail
+  // de test, qui reste disponible sur cette page.
   return {
     status: "success",
     message: settings.imapHost
-      ? "Boîte d'envoi connectée, réponses lues automatiquement. Envoyez-vous un e-mail de test pour vérifier."
-      : "Boîte d'envoi connectée. Envoyez-vous un e-mail de test pour vérifier.",
+      ? "Boîte d'envoi connectée : vos relances partiront de cette adresse et les réponses de vos clients seront lues automatiquement."
+      : "Boîte d'envoi connectée : vos relances partiront de cette adresse.",
   };
 }
 
