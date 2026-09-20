@@ -185,3 +185,37 @@ describe("invitations : durcissements de la revue", () => {
     ).rejects.toThrow(/Connexion requise/);
   });
 });
+
+/**
+ * `grant select (colonnes)` est additif : il ne restreint rien tant que le privilège de table n'a
+ * pas été retiré. L'empreinte du jeton est restée lisible jusqu'au 20/09/2026 — vérifié en base,
+ * contre l'intention affichée par la migration. Ce test empêche la rechute.
+ */
+describe("invitations : l'empreinte du jeton ne sort pas de la base", () => {
+  let db: PGlite;
+
+  beforeAll(async () => {
+    db = await createDatabase();
+  }, DB_TEST_TIMEOUT_MS);
+
+  afterAll(() => db?.close());
+
+  it("un membre lit l'adresse et le rôle, jamais l'empreinte", async () => {
+    const { rows } = await db.query<{ empreinte: boolean; adresse: boolean; role: boolean }>(
+      `select
+         has_column_privilege('authenticated', 'public.invitations', 'token_hash', 'select') as empreinte,
+         has_column_privilege('authenticated', 'public.invitations', 'email', 'select') as adresse,
+         has_column_privilege('authenticated', 'public.invitations', 'role', 'select') as role`,
+    );
+
+    expect(rows[0]?.empreinte).toBe(false);
+    expect(rows[0]?.adresse).toBe(true);
+    expect(rows[0]?.role).toBe(true);
+  });
+
+  it("une lecture qui demande l'empreinte est refusée", async () => {
+    await expect(
+      asUser(db, "00000000-0000-4000-8000-000000000001", async (tx) => tx.query("select token_hash from invitations")),
+    ).rejects.toThrow(/permission denied/);
+  });
+});
