@@ -684,10 +684,17 @@ Section tenue à jour par Claude Code à chaque palier.
   blocage réseau, garde SSRF). Vérifier d'abord la joignabilité réelle du serveur (connexion TLS et bannière,
   résolution DNS) avant de soupçonner le code : dans ce cas, les quatre hôtes GMX répondaient et leurs adresses
   sont publiques, ce qui a écarté d'emblée le port, le nom d'hôte et la garde SSRF.
-- **GMX** (et les messageries grand public en général) : l'accès par un logiciel externe est **refusé tant qu'il
-  n'est pas activé dans le compte** (Paramètres → POP3 & IMAP) ; le serveur rejette alors le mot de passe même
-  s'il est correct. Avec la validation en deux étapes, un mot de passe d'application est obligatoire. L'identifiant
-  doit être l'adresse complète. `mail.gmx.com` et `mail.gmx.net` répondent tous deux sur 465 et 587.
+- **Messageries grand public : deux verrous indépendants** (constaté sur GMX le 20/09/2026, connexion réussie une
+  fois les deux levés). Le serveur répond `535 Authentication credentials invalid` **dans les deux cas**, donc le
+  code d'erreur ne permet pas à lui seul de savoir lequel manque :
+  1. **accès POP3/IMAP** à activer dans le compte (GMX : Paramètres → POP3 & IMAP) — décoché par défaut ; tant
+     qu'il l'est, aucun mot de passe ne fonctionne ;
+  2. **mot de passe d'application** obligatoire dès que la validation en deux étapes est active — le mot de passe
+     du compte est alors définitivement refusé en SMTP et IMAP.
+  Savoir créer un mot de passe d'application ne prouve que le point 2 : les deux réglages sont distincts.
+  L'identifiant doit être l'adresse complète. `mail.gmx.com` et `mail.gmx.net` répondent sur 465 et 587.
+  Pour un usage réel, préférer une adresse au nom de domaine du client : une adresse grand public passe mal les
+  filtres anti-spam des entreprises relancées.
 - Messages MIME construits par `nodemailer/lib/mail-composer` (texte + HTML, en-têtes encodés).
 - E-mail de test envoyé à la boîte elle-même (tout membre) ; tracé.
 - **Revue de sécurité du palier 9**, corrections appliquées : garde SSRF réécrite en liste d'autorisation (`::127.0.0.1`,

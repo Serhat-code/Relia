@@ -106,12 +106,25 @@ export async function verifySmtp(settings: SmtpSettings): Promise<{ ok: true } |
     await transport.verify();
     return { ok: true };
   } catch (error) {
-    const code = typeof error === "object" && error !== null && "code" in error ? String(error.code) : "";
+    const champ = (nom: string) =>
+      typeof error === "object" && error !== null && nom in error
+        ? String((error as Record<string, unknown>)[nom])
+        : "";
+    const code = champ("code");
+    // La réponse du serveur dit précisément ce qu'il reproche (accès externe désactivé, mot de passe
+    // d'application exigé…) ; sans elle, un échec de connexion n'est pas diagnosticable. Aucune donnée
+    // personnelle ni identifiant n'y figure.
+    console.warn("Vérification SMTP en échec", {
+      host: settings.host,
+      port: settings.port,
+      code,
+      response: champ("response") || champ("message"),
+    });
     return {
       ok: false,
       error:
         code === "EAUTH"
-          ? "Le serveur SMTP a refusé l'identifiant ou le mot de passe."
+          ? "Le serveur SMTP a refusé l'identifiant ou le mot de passe. Vérifiez que l'identifiant est votre adresse complète, et que l'accès par un logiciel externe est autorisé dans votre messagerie : plusieurs fournisseurs le bloquent par défaut."
           : "Connexion au serveur SMTP impossible : vérifiez le serveur et le port.",
     };
   } finally {
