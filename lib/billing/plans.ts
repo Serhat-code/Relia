@@ -3,6 +3,9 @@
  * carte). Stripe n'encaisse que cet abonnement, jamais les règlements des clients (§2.1).
  */
 
+// `limits.ts` ne reprend d'ici qu'un type, effacé à la compilation : pas de cycle à l'exécution.
+import { planFeatures } from "./limits";
+
 export const TRIAL_DAYS = 14;
 
 export type PaidPlan = "starter" | "pro" | "business";
@@ -30,14 +33,14 @@ export const PLANS: readonly Plan[] = [
     name: "Essentiel",
     monthlyPrice: 29,
     tagline: "Pour un indépendant qui veut arrêter de relancer à la main.",
-    features: [...ESSENTIALS, "1 utilisateur", "Jusqu'à 150 factures suivies"],
+    features: [...ESSENTIALS, ...planFeatures("starter")],
   },
   {
     id: "pro",
     name: "Pro",
     monthlyPrice: 49,
     tagline: "Pour une TPE ou un studio qui facture chaque semaine.",
-    features: [...ESSENTIALS, "Jusqu'à 3 utilisateurs", "Jusqu'à 600 factures suivies"],
+    features: [...ESSENTIALS, ...planFeatures("pro")],
     isHighlighted: true,
   },
   {
@@ -45,7 +48,7 @@ export const PLANS: readonly Plan[] = [
     name: "Business",
     monthlyPrice: 79,
     tagline: "Pour une PME avec un service comptable.",
-    features: [...ESSENTIALS, "Jusqu'à 10 utilisateurs", "Factures suivies sans limite", "Assistance prioritaire"],
+    features: [...ESSENTIALS, ...planFeatures("business"), "Assistance prioritaire"],
   },
 ];
 

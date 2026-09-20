@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BillingSituationText } from "@/components/billing/BillingStatus";
+import { BillingSituationText, PlanUsageText } from "@/components/billing/BillingStatus";
 import { PlanCards } from "@/components/billing/PlanCards";
 import { PageHeader } from "@/components/app-shell/PageHeader";
 import { Reveal } from "@/components/motion/Reveal";
@@ -13,6 +13,7 @@ import { ACTIVE_SUBSCRIPTION_STATUSES } from "@/lib/billing/access";
 import { isPaidPlan, PLANS } from "@/lib/billing/plans";
 import { TeamInvitations } from "@/components/settings/TeamInvitations";
 import { listPendingInvitations } from "@/lib/data/invitations";
+import { getPlanUsage } from "@/lib/data/plan-usage";
 import { listTeam, type TeamMember } from "@/lib/data/organization-settings";
 import { requireMember } from "@/lib/data/session";
 import { formatDate } from "@/lib/format";
@@ -38,6 +39,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
     listPendingInvitations(),
     searchParams,
   ]);
+  // Le décompte n'a de sens qu'une fois une offre choisie : pendant l'essai, aucune limite.
+  const paidPlan = isPaidPlan(member.organization.plan) ? member.organization.plan : null;
+  const usage = paidPlan ? await getPlanUsage() : null;
   const organization = member.organization;
   const canManage = member.role !== "member";
   const status = organization.billing.subscriptionStatus;
@@ -65,6 +69,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <p className="max-w-2xl text-sm text-fg-muted">
                   <BillingSituationText organization={organization} />
                 </p>
+                {paidPlan && usage && <PlanUsageText plan={paidPlan} usage={usage} />}
               </div>
               {canManage && organization.billing.hasStripeCustomer && <PortalButton />}
             </div>

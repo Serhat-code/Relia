@@ -2,8 +2,10 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { describeBillingSituation, type BillingSituation } from "@/lib/billing/access";
-import { PLAN_NAMES } from "@/lib/billing/plans";
+import { findLimitOverrun, PLAN_LIMITS, type PlanUsage } from "@/lib/billing/limits";
+import { isPaidPlan, PLAN_NAMES, type PaidPlan } from "@/lib/billing/plans";
 import type { CurrentMember } from "@/lib/data/session";
+import { cn } from "@/lib/cn";
 import { formatDate, pluralize } from "@/lib/format";
 
 type Organization = CurrentMember["organization"];
@@ -58,8 +60,12 @@ export function BillingSituationText({ organization }: { organization: Organizat
 /** Jours d'essai à partir desquels l'application prévient, sur toutes les pages. */
 const TRIAL_WARNING_DAYS = 3;
 
-/** Bandeau commun à l'application : fin d'essai proche, relances en pause, paiement en échec. */
-export function BillingBanner({ organization }: { organization: Organization }) {
+/**
+ * Bandeau commun à l'application : fin d'essai proche, relances en pause, paiement en échec, et —
+ * en dernier — dépassement de l'offre. Les limites **avertissent seulement** : rien n'est bloqué,
+ * une TPE qui dépasse le soir d'un gros import continue de relancer.
+ */
+export function BillingBanner({ organization, usage }: { organization: Organization; usage?: PlanUsage }) {
   const situation = billingSituation(organization);
   const link = (label: string) => (
     <Link href="/app/parametres#abonnement" className="font-medium text-link hover:underline">
@@ -73,10 +79,35 @@ export function BillingBanner({ organization }: { organization: Organization }) 
     message = { tone: "error", content: <>Relances en pause : aucune relance ne part sans abonnement actif. {link("Choisir une offre")}</> };
   } else if (situation.kind === "subscribed" && situation.status === "past_due") {
     message = { tone: "error", content: <>Le paiement de votre abonnement a échoué. {link("Mettre à jour la carte")}</> };
+  } else if (usage && isPaidPlan(organization.plan)) {
+    const overrun = findLimitOverrun(organization.plan, usage);
+    if (overrun) {
+      message = { tone: "info", content: <>{overrun.message} Tout continue de fonctionner. {link("Voir les offres")}</> };
+    }
   }
   return message ? (
     <div className="mb-6">
       <FormMessage tone={message.tone}>{message.content}</FormMessage>
     </div>
   ) : null;
+}
+
+/**
+ * Consommation de l'offre, affichée même sous la limite : on doit voir venir le dépassement, pas le
+ * découvrir. Aucune limite n'est bloquante.
+ */
+export function PlanUsageText({ plan, usage }: { plan: PaidPlan; usage: PlanUsage }) {
+  const limits = PLAN_LIMITS[plan];
+  const overrun = findLimitOverrun(plan, usage);
+  const invoices =
+    limits.invoices === null
+      ? `${usage.invoices} factures suivies, sans limite`
+      : `${usage.invoices} factures suivies sur ${limits.invoices}`;
+
+  return (
+    <p className={cn("max-w-2xl text-sm", overrun ? "text-warning" : "text-fg-subtle")}>
+      {`${usage.users} ${pluralize(usage.users, "utilisateur", "utilisateurs")} sur ${limits.users} · ${invoices}`}
+      {overrun ? " — au-delà de votre offre, sans que rien ne soit bloqué." : ""}
+    </p>
+  );
 }

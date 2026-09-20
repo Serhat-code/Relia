@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { AppShell } from "@/components/app-shell/AppShell";
 import { BillingBanner } from "@/components/billing/BillingStatus";
 import { FormMessage } from "@/components/ui/FormMessage";
+import { isPaidPlan } from "@/lib/billing/plans";
+import { getPlanUsage } from "@/lib/data/plan-usage";
 import { requireMember } from "@/lib/data/session";
 import { isSupabaseConfigured } from "@/lib/env";
 
@@ -28,7 +30,9 @@ function ConfigurationMissing() {
 export default async function AppLayout({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured()) return <ConfigurationMissing />;
 
+  // Le décompte n'est lu que pour une offre payante : pendant l'essai, aucune limite ne s'applique.
   const member = await requireMember();
+  const usage = isPaidPlan(member.organization.plan) ? await getPlanUsage() : undefined;
   return (
     <AppShell
       member={{
@@ -37,7 +41,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         userEmail: member.email,
       }}
     >
-      <BillingBanner organization={member.organization} />
+      <BillingBanner organization={member.organization} usage={usage} />
       {children}
     </AppShell>
   );
