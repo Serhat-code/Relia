@@ -19,10 +19,26 @@ export type PendingInvitation = {
 export type InvitationCreated = { ok: true; token: string } | { ok: false; error: string };
 export type InvitationMutation = { ok: true } | { ok: false; error: string };
 
-/** Message d'erreur français renvoyé par la base, sinon un repli neutre. */
-const readError = (error: { message: string } | null, fallback: string) => {
-  const message = error?.message?.trim();
-  return message && !message.startsWith("permission denied") ? message : fallback;
+/**
+ * Codes que les fonctions d'invitation emploient pour leurs refus volontaires, chacun accompagné
+ * d'un message déjà rédigé en français.
+ */
+const INTENTIONAL_CODES = new Set(["42501", "22023", "23505", "P0002"]);
+
+/**
+ * Ne renvoie au navigateur que les refus que la base a formulés pour l'utilisateur. Un incident
+ * imprévu est journalisé côté serveur et remplacé par un message neutre : un texte brut de
+ * PostgreSQL exposerait des noms de contraintes et de colonnes (§ palier 15, « jamais error.message »).
+ * Les refus volontaires ne portent ni `details` ni `hint` — PostgreSQL, si.
+ */
+const readError = (
+  error: { message: string; code?: string; details?: string | null; hint?: string | null } | null,
+  fallback: string,
+) => {
+  if (!error) return fallback;
+  console.error("Invitations : appel refusé", { code: error.code, message: error.message });
+  const isIntentional = INTENTIONAL_CODES.has(error.code ?? "") && !error.details && !error.hint;
+  return isIntentional ? error.message.trim() : fallback;
 };
 
 export async function listPendingInvitations(): Promise<PendingInvitation[]> {

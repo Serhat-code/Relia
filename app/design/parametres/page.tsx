@@ -7,6 +7,7 @@ import { PlanCards } from "@/components/billing/PlanCards";
 import { Reveal } from "@/components/motion/Reveal";
 import { CheckoutButton } from "@/components/settings/BillingActions";
 import { OrganizationForm, RetentionForm } from "@/components/settings/OrganizationForms";
+import { TeamInvitations, type PendingInvitationView } from "@/components/settings/TeamInvitations";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PLANS } from "@/lib/billing/plans";
 import type { CurrentMember } from "@/lib/data/session";
@@ -15,6 +16,12 @@ import { isProductionDeployment } from "@/lib/env";
 export const metadata: Metadata = { title: "Paramètres (démonstration)", robots: { index: false, follow: false } };
 
 const DAY_MS = 86_400_000;
+
+// Invitations fictives : la démonstration doit montrer la liste autant que le formulaire.
+const DEMO_INVITATIONS: PendingInvitationView[] = [
+  { id: "00000000-0000-4000-8000-0000000000b1", email: "camille@atelier-demo.fr", role: "admin", expiresAt: "2026-09-27" },
+  { id: "00000000-0000-4000-8000-0000000000b2", email: "sofiane@atelier-demo.fr", role: "member", expiresAt: "2026-09-25" },
+];
 
 // Démonstration interne du palier 13 (sans base de données) : organisation en essai, 3 jours restants.
 function demoOrganization(): CurrentMember["organization"] {
@@ -80,6 +87,20 @@ export default function SettingsDemoPage() {
               </CardHeader>
               <CardContent>
                 <RetentionForm months={organization.retentionMonths} canManage />
+              </CardContent>
+            </Card>
+          </Reveal>
+          <Reveal index={4}>
+            <Card className="h-full lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Équipe</CardTitle>
+                <CardDescription>
+                  Les personnes qui ont accès aux factures et aux relances. Une invitation est un lien à transmettre :
+                  Relia n&apos;envoie pas d&apos;e-mail pour cela.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TeamInvitations invitations={DEMO_INVITATIONS} canManage />
               </CardContent>
             </Card>
           </Reveal>

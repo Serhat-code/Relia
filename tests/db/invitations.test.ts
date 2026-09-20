@@ -131,3 +131,57 @@ describe("invitations d'équipe", () => {
     ).rejects.toThrow(/introuvable|administrateurs/);
   });
 });
+
+/** Durcissements issus de la revue de sécurité du 20/09/2026. */
+describe("invitations : durcissements de la revue", () => {
+  let db: PGlite;
+  let tenant: Tenant;
+
+  const invite = (userId: string, email: string) =>
+    asUser(db, userId, async (tx) =>
+      (await tx.query<{ invitation_id: string; token: string }>(
+        "select * from public.create_invitation($1, 'member'::public.member_role)",
+        [email],
+      )).rows[0],
+    );
+
+  beforeAll(async () => {
+    db = await createDatabase();
+    tenant = await createTenant(db, "Atelier Durci");
+  }, DB_TEST_TIMEOUT_MS);
+
+  afterAll(() => db?.close());
+
+  it("refuse une seconde invitation en attente en français, sans exposer l'index", async () => {
+    await invite(tenant.userId, "doublon@exemple.fr");
+
+    const failure = await invite(tenant.userId, "Doublon@Exemple.fr").catch((error: unknown) => error);
+
+    expect(String(failure)).toMatch(/déjà en attente/);
+    expect(String(failure)).not.toMatch(/invitations_pending_email_idx|duplicate key/);
+  });
+
+  it("aucun membre ne peut écrire directement dans la table", async () => {
+    for (const statement of [
+      "insert into invitations (organization_id, email, role, token_hash, invited_by, expires_at) values ($1, 'x@y.fr', 'admin', 'h', $2, now() + interval '1 day')",
+      "update invitations set role = 'admin'",
+      "delete from invitations",
+    ]) {
+      await expect(
+        asUser(db, tenant.userId, async (tx) => tx.query(statement, statement.startsWith("insert") ? [tenant.organizationId, tenant.userId] : [])),
+      ).rejects.toThrow(/permission denied/);
+    }
+  });
+
+  it("un compte sans adresse est refusé, au lieu de sauter la vérification d'adresse", async () => {
+    const created = await invite(tenant.userId, "prevue2@exemple.fr");
+    const { rows } = await db.query<{ id: string }>(
+      "insert into auth.users (id, email) values (gen_random_uuid(), null) returning id",
+    );
+    const nameless = rows[0]!.id;
+
+    await expect(
+      asUser(db, nameless, async (tx) => tx.query("select public.accept_invitation($1)", [created!.token])),
+    ).rejects.toThrow(/Connexion requise/);
+  });
+});
