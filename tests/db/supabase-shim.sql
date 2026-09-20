@@ -113,3 +113,51 @@ $$;
 create view vault.decrypted_secrets as
   select id, name, description, secret, secret as decrypted_secret, key_id, nonce, created_at, updated_at
   from vault.secrets;
+
+-- pg_cron et pg_net : indisponibles dans PGlite, imités comme le reste de Supabase. Les tâches sont
+-- enregistrées dans une table, les appels HTTP sont notés sans être émis.
+create schema cron;
+revoke all on schema cron from public;
+
+create table cron.job (
+  jobid bigserial primary key,
+  jobname text unique,
+  schedule text not null,
+  command text not null,
+  active boolean not null default true
+);
+
+create function cron.schedule(job_name text, schedule text, command text) returns bigint
+language sql
+as $$
+  insert into cron.job (jobname, schedule, command) values (job_name, schedule, command)
+  on conflict (jobname) do update set schedule = excluded.schedule, command = excluded.command
+  returning jobid
+$$;
+
+create function cron.unschedule(job_name text) returns boolean
+language sql
+as $$
+  delete from cron.job where jobname = job_name returning true
+$$;
+
+create schema net;
+revoke all on schema net from public;
+
+create table net.sent_requests (
+  id bigserial primary key,
+  url text not null,
+  headers jsonb not null,
+  created_at timestamptz not null default now()
+);
+
+create function net.http_get(
+  url text,
+  params jsonb default '{}'::jsonb,
+  headers jsonb default '{}'::jsonb,
+  timeout_milliseconds integer default 5000
+) returns bigint
+language sql
+as $$
+  insert into net.sent_requests (url, headers) values (url, headers) returning id
+$$;

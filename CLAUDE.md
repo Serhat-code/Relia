@@ -865,11 +865,22 @@ Section tenue à jour par Claude Code à chaque palier.
 
 ### Crons, purge et durcissement (palier 15)
 
-- **Crons** déclarés dans `vercel.json` (horaires en UTC, exécution en `cdg1`, **plan Vercel Pro requis** pour les
-  crons de moins d'un jour) : `0 7 * * *` préparation (recalcul des scores de risque de tous les débiteurs — ils
-  dépendent de la date —, promesses échues soldées, relances du jour), `*/15 * * * *` envoi, `*/30 * * * *` lecture
-  des réponses, `0 4 * * 0` purge. Tous exigent `Authorization: Bearer CRON_SECRET`. Pas de cron de synchronisation
-  des intégrations (`0 3 * * *` du §9) : aucune intégration comptable n'existe encore.
+- **Crons déclenchés par la base, pas par Vercel** (décidé le 20/09/2026) : le plan Hobby n'accepte que deux tâches,
+  une fois par jour au plus, et **refuse le déploiement** dès qu'un `*/15` figure dans `vercel.json`. Le bloc `crons`
+  en a donc été retiré (il ne reste que `"regions": ["cdg1"]`), et `20260920100000_cron_interne.sql` planifie les
+  quatre tâches avec **pg_cron**, depuis le projet Supabase de Paris : `private.call_cron_endpoint` appelle la route
+  avec `Authorization: Bearer <secret>` via **pg_net**. Horaires inchangés (UTC) : `0 7 * * *` préparation (recalcul
+  des scores de risque de tous les débiteurs — ils dépendent de la date —, promesses échues soldées, relances du
+  jour), `*/15 * * * *` envoi, `*/30 * * * *` lecture des réponses, `0 4 * * 0` purge. Gratuit, illimité, et le
+  déclenchement ne sort pas d'UE. Écarté : GitHub Actions (un `*/15` sur un dépôt privé dépasse les 2 000 minutes
+  gratuites mensuelles). Pas de cron de synchronisation des intégrations (`0 3 * * *` du §9) : aucune intégration
+  comptable n'existe encore.
+- **Mise en service des tâches**, une fois par projet Supabase : activer `pg_cron` et `pg_net` (Database →
+  Extensions), puis poser les deux secrets dans l'éditeur SQL — jamais dans le dépôt :
+  `select vault.create_secret('https://…vercel.app', 'relia_cron_base_url');` et
+  `select vault.create_secret('<CRON_SECRET>', 'relia_cron_secret');`. Sans eux, les tâches tournent à vide au lieu
+  d'échouer. Repasser aux crons Vercel le jour du plan Pro : remettre le bloc `crons` et
+  `select cron.unschedule('relia-…')` sur les quatre tâches.
 - **Purge** (`public.purge_expired_data`, §2.2) : pour chaque organisation, factures closes depuis plus que sa durée
   de conservation (relances, réponses, promesses en cascade), débiteurs devenus sans facture, journal plus ancien ;
   tracé `data.purged` avec les seuls nombres.
