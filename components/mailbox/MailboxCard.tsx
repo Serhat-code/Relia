@@ -10,6 +10,7 @@ import { FormMessage } from "@/components/ui/FormMessage";
 import { Modal } from "@/components/ui/Modal";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 import { formatDateTime } from "@/lib/format";
+import { readsReplies } from "@/lib/mail/replies-reading";
 
 type MailboxCardProps = {
   mailbox: {
@@ -28,8 +29,7 @@ type MailboxCardProps = {
 
 /** Lecture des réponses (§5.6) : Gmail et Outlook par leur API, le repli SMTP par IMAP s'il est renseigné. */
 function RepliesStatus({ mailbox }: { mailbox: MailboxCardProps["mailbox"] }) {
-  const readsReplies = mailbox.provider !== "smtp" || mailbox.imapHost !== null;
-  if (!readsReplies) {
+  if (!readsReplies(mailbox)) {
     return (
       <FormMessage tone="info">
         Relia ne lit pas les réponses de vos clients : elles arrivent dans votre messagerie et les relances continuent. Pour

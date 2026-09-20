@@ -69,7 +69,7 @@ const at = (time: string) => `${TODAY}T${time}:00Z`;
 
 const DATA: DashboardData | null = SUMMARY && {
   summary: SUMMARY,
-  todo: { awaitingApproval: 2, repliesToHandle: 3, failedReminders: 1 },
+  todo: { awaitingApproval: 2, repliesToHandle: 3, failedReminders: 1, isMissingReplyReading: true },
   activity: [
     {
       id: 5,

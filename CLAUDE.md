@@ -828,8 +828,16 @@ Section tenue à jour par Claude Code à chaque palier.
 - **Graphique d'ancienneté** (`components/dashboard/AgingChart.tsx`) : barres horizontales d'une seule couleur
   (`--accent`, validé par le script de la compétence dataviz sur les deux fonds), 20 px, bout arrondi de 4 px côté
   donnée, valeur au bout de chaque barre, part du retard au survol et au clavier (et lue par les lecteurs d'écran).
-- **À faire** : réponses à traiter, relances à valider, envois en échec, avec liens. **Activité du jour** : journal
-  depuis minuit (heure de Paris), sans les vérifications techniques (e-mail de test, lecture demandée).
+- **Carte « À faire »** (`TodoList`, faite — la note « à faire » de ce paragraphe était périmée) : réponses à
+  traiter, relances à valider, envois en échec, chacune avec son lien, masquée quand le compte est à zéro.
+  **Activité du jour** : journal depuis minuit (heure de Paris), sans les vérifications techniques (e-mail de
+  test, lecture demandée).
+- **Réglage manquant signalé au tableau de bord** (20/09/2026) : une boîte SMTP active **sans serveur IMAP** envoie
+  les relances mais n'entend aucune réponse — ni promesse détectée, ni mise en pause. La carte de la boîte d'envoi
+  le disait déjà, mais seulement sur sa page ; la `TodoList` le reprend donc, avec un lien vers `/app/boite-mail`.
+  Constaté en situation réelle : le réglage IMAP est facultatif à la connexion, donc facile à manquer, et rien
+  n'attirait l'attention ensuite. La règle « cette boîte lit-elle les réponses ? » vit dans
+  `lib/mail/replies-reading.ts` (client comme serveur) pour que la carte et le tableau de bord ne divergent pas.
 - **Journal** `/app/journal` : 50 entrées par page, filtres par thème (`lib/audit/categories.ts` : conditions
   PostgREST fixes sur l'action), lien vers la facture ou le client concerné (`entryLink` : jamais vers un client
   effacé, identifiant vérifié), mention d'inaltérabilité. `lib/data/audit.ts` partage la mise en forme entre
