@@ -1097,3 +1097,19 @@ des messages d'erreur trompeurs ; la racine tranche sans ambiguïté. Les aides 
 
 C'est la brique qui rend l'ouverture à la Roumanie techniquement réelle : leur facturation électronique est
 obligatoire et produit de l'UBL, que Relia sait désormais lire.
+
+### Lecture XML : ce qui protège vraiment (mesuré le 20/09/2026)
+
+Mesures faites sur `fast-xml-parser` avec les options du projet, pas déduites de la documentation.
+
+- **`hasDoctype()` est la protection, pas une précaution redondante.** Si la garde était contournée, le parseur
+  **résout bien les entités internes** (`<!ENTITY x "BOOM">` puis `&x;` donne « BOOM »). La garde tient sur les
+  variantes essayées : minuscules, DOCTYPE précédé d'un commentaire, BOM et espaces en tête.
+- **Pas de vecteur de déni de service réaliste** : 8,8 Mo de répétition massive d'un élément se lisent en ~2 s,
+  200 000 attributs en ~1 s, 8 Mo de texte en ~0,7 s, et une imbrication de 2 000 niveaux est **refusée** par
+  `maxNestedTags: 64`. Le tout s'exécute de toute façon dans l'onglet de l'utilisateur, sur un fichier qu'il a
+  lui-même choisi : le serveur n'est pas exposé.
+- **Le choix de la syntaxe ignore les commentaires** : la recherche de l'élément racine matchait à l'intérieur
+  d'un `<!-- … -->`, si bien qu'un Factur-X valide dont un commentaire mentionne `<Invoice>` partait vers le
+  lecteur UBL. Le refus des avoirs vit dans le parseur et non dans le routeur, donc un avoir déguisé par un
+  commentaire reste refusé — couvert par un test.
