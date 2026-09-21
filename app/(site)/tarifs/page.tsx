@@ -5,8 +5,12 @@ import { PlanCards } from "@/components/billing/PlanCards";
 import { Faq } from "@/components/marketing/Faq";
 import { Reveal } from "@/components/motion/Reveal";
 import { buttonClasses } from "@/components/ui/button-styles";
+import { JsonLd } from "@/components/marketing/JsonLd";
 import { PLANS, TRIAL_DAYS } from "@/lib/billing/plans";
+import { pricingJsonLd } from "@/lib/marketing/structured-data";
 import { PRICING_FAQ } from "@/lib/marketing/content";
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export const metadata: Metadata = {
   title: "Tarifs",
@@ -26,7 +30,9 @@ const INCLUDED = [
 
 export default function PricingPage() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pt-16 pb-24 sm:px-8">
+    <>
+      <JsonLd data={pricingJsonLd(SITE_URL)} />
+      <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pt-16 pb-24 sm:px-8">
       <Reveal className="flex max-w-2xl flex-col gap-4">
         <p className="text-xs font-semibold tracking-[0.18em] text-link uppercase">Tarifs</p>
         <h1 className="font-display text-3xl leading-tight font-semibold text-balance">Choisissez quand vous êtes prêt.</h1>
@@ -76,7 +82,8 @@ export default function PricingPage() {
         <Reveal index={1}>
           <Faq items={PRICING_FAQ} />
         </Reveal>
-      </section>
-    </div>
+        </section>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,7 @@
 import { ArrowRight, Check } from "lucide-react";
 import type { Metadata } from "next";
+import { JsonLd } from "@/components/marketing/JsonLd";
+import { landingJsonLd } from "@/lib/marketing/structured-data";
 import Link from "next/link";
 import { ReliaMark } from "@/components/brand/ReliaMark";
 import { PlanCards } from "@/components/billing/PlanCards";
@@ -10,6 +12,8 @@ import { buttonClasses } from "@/components/ui/button-styles";
 import { PLANS, TRIAL_DAYS } from "@/lib/billing/plans";
 import { RING_STAGE_LABELS, RING_STAGES, type RingStage } from "@/lib/brand/ring";
 import { COMMITMENTS, HOW_IT_WORKS, LANDING_FAQ } from "@/lib/marketing/content";
+
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
 
 export const metadata: Metadata = {
   title: { absolute: "Relia — relance automatique des factures impayées" },
@@ -45,6 +49,7 @@ function SectionTitle({ eyebrow, title, text }: { eyebrow: string; title: string
 export default function HomePage() {
   return (
     <>
+      <JsonLd data={landingJsonLd(SITE_URL)} />
       {/* Accroche */}
       {/* overflow-x-clip : le halo du visuel ne doit pas élargir la page sur téléphone. */}
       <section className="mx-auto grid max-w-6xl items-center gap-14 overflow-x-clip px-4 pt-16 pb-20 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:overflow-visible lg:pt-24 lg:pb-28">

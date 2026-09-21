@@ -71,3 +71,43 @@ test.describe("site public", () => {
     }
   });
 });
+
+/**
+ * Données structurées : le vrai risque est la CSP du projet, qui n'autorise aucun script sans le
+ * nonce de la requête. Un test unitaire ne verrait pas un balisage bloqué par le navigateur.
+ */
+test.describe("données structurées", () => {
+  test("l'accueil publie un balisage schema.org valide, servi avec le nonce", async ({ page }) => {
+    const violations: string[] = [];
+    page.on("console", (message) => {
+      if (/Content Security Policy/i.test(message.text())) violations.push(message.text());
+    });
+
+    await page.goto("/");
+    const script = page.locator('script[type="application/ld+json"]');
+
+    await expect(script).toHaveCount(1);
+    // Le navigateur efface l'attribut nonce du DOM une fois la CSP appliquée (protection contre
+    // l'exfiltration) : on le cherche donc dans le HTML servi, pas dans le DOM.
+    const served = await (await page.request.get("/")).text();
+    const tag = served.match(/<script[^>]*application\/ld\+json[^>]*>/)?.[0] ?? "";
+    expect(tag, "balise du balisage structuré dans le HTML servi").toMatch(/nonce="[^"]+"/);
+    const graph = JSON.parse((await script.textContent()) ?? "{}");
+    expect(graph["@context"]).toBe("https://schema.org");
+    expect(graph["@graph"].map((node: { "@type": string }) => node["@type"])).toEqual([
+      "Organization",
+      "SoftwareApplication",
+      "FAQPage",
+    ]);
+    expect(violations).toEqual([]);
+  });
+
+  test("les tarifs annoncent les trois prix au moteur de recherche", async ({ page }) => {
+    await page.goto("/tarifs");
+
+    const graph = JSON.parse((await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}");
+    const software = graph["@graph"].find((node: { "@type": string }) => node["@type"] === "SoftwareApplication");
+
+    expect(software.offers.map((offer: { price: number }) => offer.price)).toEqual([29, 49, 79]);
+  });
+});

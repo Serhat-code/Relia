@@ -1113,3 +1113,37 @@ Mesures faites sur `fast-xml-parser` avec les options du projet, pas déduites d
   d'un `<!-- … -->`, si bien qu'un Factur-X valide dont un commentaire mentionne `<Invoice>` partait vers le
   lecteur UBL. Le refus des avoirs vit dans le parseur et non dans le routeur, donc un avoir déguisé par un
   commentaire reste refusé — couvert par un test.
+
+### Données structurées schema.org (21/09/2026)
+
+Le référencement sur « relance facture impayée » est le canal d'acquisition n° 2 de la stratégie France, et
+rien n'était balisé. `lib/marketing/structured-data.ts` publie un graphe par page : `Organization`,
+`SoftwareApplication` avec les trois offres, et `FAQPage` sur l'accueil.
+
+- **Tout est dérivé des sources déjà en place** (`PLANS`, `LANDING_FAQ`, `PUBLISHER`) : un prix qui change sur la
+  page tarifs change dans le balisage. Six tests figent cette parité — un balisage qui ment est pire que pas de
+  balisage.
+- Les champs de l'éditeur ne sont annoncés **que s'ils sont renseignés** : tant que `publisher.ts` est vide,
+  rien de creux ne part dans le balisage.
+- **Seul `dangerouslySetInnerHTML` du dépôt**, et il est nécessaire : React échappe les guillemets d'un enfant
+  texte, ce qui casserait le JSON. Les données viennent du dépôt, jamais d'un utilisateur, et `<` est échappé
+  pour qu'aucune chaîne ne puisse fermer la balise.
+- **Le nonce de la requête est repris** : la CSP du projet n'autorise aucun script sans lui.
+- Piège de test : **le navigateur efface l'attribut `nonce` du DOM** une fois la CSP appliquée — protection
+  contre l'exfiltration. Un test qui lit `nonce` dans le DOM reçoit toujours `""` ; il faut le chercher dans le
+  HTML servi. Deux tests de bout en bout vérifient que le balisage n'est pas bloqué et qu'il s'analyse.
+
+### Reste à faire, avec ce qui manque pour le faire (21/09/2026)
+
+- **Identifiant d'entreprise étranger** : un CUI roumain lu dans un UBL est aujourd'hui **jeté** — seul le SIREN
+  a une colonne. Y remédier demande de réécrire `public.import_invoices` (153 lignes) pour un champ dont aucun
+  client actuel n'a besoin : prématuré. **Question ouverte** : le §2.4 réserve le score de risque aux personnes
+  morales avec SIREN ; l'étendre à un registre national étranger est une décision à prendre explicitement, pas à
+  glisser dans un correctif.
+- **Couche i18n** : `lib/format.ts` force `fr-FR` et `Europe/Paris`, et le §8 impose des textes en français.
+  Refonte de plusieurs jours, qui contredit une règle du §8 : à décider avant d'être entreprise.
+- **Références légales par pays** : la directive 2011/7/UE est transposée partout dans l'Union, mais la
+  **citation** diffère. Elle doit venir d'un juriste local, pas d'une rédaction automatique — ces phrases partent
+  à de vrais débiteurs.
+- **Intégrations comptables** (Pennylane, Qonto) : le canal qui compte pour le segment PME, et l'écart principal
+  face à Upflow. Demande des comptes d'API.
