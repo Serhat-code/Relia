@@ -1,7 +1,7 @@
 import { addDays } from "./dates";
 import { importRowSchema, type ImportRow } from "./import-row";
 import { parseDate } from "./parse";
-import { normalizeSiren } from "@/lib/siren";
+import { isValidSiren, normalizeSiren } from "@/lib/siren";
 import { all, amount, attribute, child, hasDoctype, isNode, text, xmlParser } from "./xml";
 
 /**
@@ -48,8 +48,10 @@ function partySiren(party: unknown): string | null {
   const companyId = child(party, "PartyLegalEntity", "CompanyID");
   const scheme = attribute(companyId, "schemeID");
   const siren = normalizeSiren(text(companyId) ?? "");
-  // Sans indication de registre, on n'accepte un SIREN que s'il en a la forme exacte.
-  return siren.length === 9 && (scheme === null || scheme === SIREN_SCHEME) ? siren : null;
+  // Sans indication de registre, on n'accepte un SIREN que s'il en a la forme exacte. La clé de
+  // contrôle est vérifiée ici : un identifiant douteux est ignoré, plutôt que de faire échouer une
+  // facture par ailleurs valide au moment de la revalidation.
+  return (scheme === null || scheme === SIREN_SCHEME) && isValidSiren(siren) ? siren : null;
 }
 
 /** Montant de la balise dans la devise du document, à défaut le premier trouvé. */

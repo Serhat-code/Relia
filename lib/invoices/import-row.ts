@@ -9,7 +9,8 @@ export const MAX_IMPORT_ROWS = 2000;
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date invalide.");
 const amount = z.number().nonnegative("Montant négatif.").max(100_000_000, "Montant trop élevé.");
 
-const nullableAmount = z.number().finite().nullable();
+/** Totaux du résumé : bornés comme les montants engageants, mais un avoir peut être négatif. */
+const nullableAmount = z.number().finite().min(-100_000_000).max(100_000_000).nullable();
 
 /** Résumé conservé d'une facture Factur-X (jamais le PDF) : forme fixe et bornée. */
 export const facturXSummarySchema = z

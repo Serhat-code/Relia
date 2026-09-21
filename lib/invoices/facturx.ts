@@ -1,5 +1,5 @@
 import { decodePDFRawStream, PDFArray, PDFDict, PDFDocument, PDFHexString, PDFName, PDFRawStream, PDFString } from "pdf-lib";
-import { normalizeSiren } from "@/lib/siren";
+import { isValidSiren, normalizeSiren } from "@/lib/siren";
 import { addDays } from "./dates";
 import { importRowSchema, type ImportRow } from "./import-row";
 import { parseDate } from "./parse";
@@ -42,8 +42,10 @@ function ciiDate(node: unknown): string | null {
 function buyerSiren(buyer: unknown): string | null {
   const legalId = child(buyer, "SpecifiedLegalOrganization", "ID");
   const scheme = attribute(legalId, "schemeID");
-  const siren = normalizeSiren(text(legalId) ?? "");
-  return siren && (scheme === null || scheme === SIREN_SCHEME) ? siren.slice(0, 9) : null;
+  const siren = normalizeSiren(text(legalId) ?? "").slice(0, 9);
+  // Clé de contrôle vérifiée ici : un SIREN mal saisi par l'émetteur est ignoré, plutôt que de
+  // faire échouer toute la facture au moment de la revalidation.
+  return (scheme === null || scheme === SIREN_SCHEME) && isValidSiren(siren) ? siren : null;
 }
 
 function taxTotal(settlement: unknown, currency: string | null): number | null {

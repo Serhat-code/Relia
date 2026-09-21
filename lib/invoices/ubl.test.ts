@@ -63,6 +63,20 @@ describe("parseUblInvoice", () => {
     expect(result.ok && result.row.debtorSiren).toBe("732829320");
   });
 
+  it("ignore un SIREN dont la clé de contrôle est fausse, au lieu de refuser la facture", () => {
+    // 732829321 : dernier chiffre modifié, clé de Luhn invalide.
+    const result = parseUblInvoice(ROMANIAN.replace('schemeID="0190">RO12345678', 'schemeID="0002">732829321'));
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.row.debtorSiren).toBeNull();
+  });
+
+  it("borne les totaux du résumé conservé", () => {
+    const enorme = ROMANIAN.replace("<cbc:TaxAmount currencyID=\"RON\">1900.00</cbc:TaxAmount>", "<cbc:TaxAmount currencyID=\"RON\">999999999999.00</cbc:TaxAmount>");
+
+    expect(parseUblInvoice(enorme).ok).toBe(false);
+  });
+
   it("sans échéance, applique le délai supplétif de 30 jours", () => {
     const result = parseUblInvoice(ROMANIAN.replace("<cbc:DueDate>2026-10-01</cbc:DueDate>", ""));
 
