@@ -4,6 +4,7 @@ import { FlaskConical, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { clearSampleDataAction, loadSampleDataAction } from "@/app/app/actions";
 import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { FormMessage } from "@/components/ui/FormMessage";
 import { useToast } from "@/components/ui/toast/ToastProvider";
 
@@ -64,5 +65,43 @@ export function SampleDataBanner() {
         </Button>
       </span>
     </FormMessage>
+  );
+}
+
+/**
+ * Carte du jeu d'essai sur l'écran d'import : c'est là qu'on vient quand on cherche des données,
+ * et elle reste accessible même avec de vraies factures — éprouver la boucle d'envoi et de réponse
+ * demande un destinataire qu'on maîtrise, ce qu'un vrai client n'est jamais.
+ */
+export function SampleDataCard({ canManage, isLoaded }: { canManage: boolean; isLoaded: boolean }) {
+  const { isPending, trigger } = useSampleAction(isLoaded ? clearSampleDataAction : loadSampleDataAction);
+
+  return (
+    <Card>
+      <CardContent className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 max-w-xl flex-col gap-1">
+          <h2 className="flex items-center gap-2 font-medium">
+            <FlaskConical aria-hidden className="size-4 shrink-0 text-link" />
+            Jeu d&apos;essai
+          </h2>
+          <p className="text-sm text-fg-muted">
+            {isLoaded
+              ? "Cinq factures fictives et un client à votre adresse sont chargés. Effacez-les quand vous voulez : vos vraies données ne sont pas touchées."
+              : "Cinq factures fictives et un client portant votre propre adresse. La relance vous revient, vous pouvez y répondre : la boucle complète s'éprouve sans impliquer un vrai client."}
+          </p>
+        </div>
+        {canManage && (
+          <Button
+            variant={isLoaded ? "ghost" : "secondary"}
+            icon={isLoaded ? <Trash2 aria-hidden /> : <FlaskConical aria-hidden />}
+            status={isPending ? "loading" : "idle"}
+            loadingLabel={isLoaded ? "Effacement…" : "Chargement…"}
+            onClick={trigger}
+          >
+            {isLoaded ? "Effacer le jeu d'essai" : "Charger un jeu d'essai"}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
