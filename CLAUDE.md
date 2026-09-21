@@ -1147,3 +1147,26 @@ rien n'était balisé. `lib/marketing/structured-data.ts` publie un graphe par p
   à de vrais débiteurs.
 - **Intégrations comptables** (Pennylane, Qonto) : le canal qui compte pour le segment PME, et l'écart principal
   face à Upflow. Demande des comptes d'API.
+
+### Jeu d'essai en un clic (21/09/2026)
+
+Un compte neuf est vide : sans données, on ne voit pas Relia travailler et l'on abandonne avant d'avoir préparé
+un CSV. C'est le point faible du parcours, alors que le §1 promet une prise en main en moins de 10 minutes.
+
+`public.load_sample_data()` crée un client fictif et cinq factures — une à échoir, trois en retard d'ancienneté
+croissante (12, 45 et 95 jours, une par tranche du graphique), une réglée — dans la **devise de travail** de
+l'organisation.
+
+**Le détail qui fait tout** : le client fictif porte **l'adresse du membre qui charge le jeu**. La relance lui
+revient donc, il peut y répondre, et la boucle complète — envoi réel, lecture de la réponse, détection de la
+promesse — se teste sans impliquer un vrai client. C'est le seul moyen d'éprouver le produit de bout en bout
+avant d'avoir un vrai impayé sous la main.
+
+- Colonnes `is_sample` sur `debtors` et `invoices` : l'effacement est exact, jamais une recherche de nom
+  approximative. `public.clear_sample_data()` ne touche que ces lignes — un test le vérifie avec de vraies
+  données à côté.
+- Client fictif en personne morale avec SIREN, pour que le score de risque s'applique (§2.4) et que la
+  démonstration soit complète.
+- Un seul chargement à la fois : recharger sans effacer fausserait les chiffres du tableau de bord.
+- Propriétaire et administrateurs seulement. Tant que le jeu est chargé, un bandeau le rappelle sur le tableau
+  de bord et propose de l'effacer — des données fictives ne doivent jamais se confondre avec de vraies.

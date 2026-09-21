@@ -61,6 +61,7 @@ export type Database = {
           created_at: string;
           id: string;
           is_legal_entity: boolean;
+          is_sample: boolean;
           name: string;
           notes: string | null;
           organization_id: string;
@@ -77,6 +78,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_legal_entity?: boolean;
+          is_sample?: boolean;
           name: string;
           notes?: string | null;
           organization_id: string;
@@ -93,6 +95,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_legal_entity?: boolean;
+          is_sample?: boolean;
           name?: string;
           notes?: string | null;
           organization_id?: string;
@@ -289,6 +292,7 @@ export type Database = {
           external_id: string | null;
           factur_x_raw: Json | null;
           id: string;
+          is_sample: boolean;
           issued_at: string;
           number: string;
           organization_id: string;
@@ -308,6 +312,7 @@ export type Database = {
           external_id?: string | null;
           factur_x_raw?: Json | null;
           id?: string;
+          is_sample?: boolean;
           issued_at: string;
           number: string;
           organization_id: string;
@@ -327,6 +332,7 @@ export type Database = {
           external_id?: string | null;
           factur_x_raw?: Json | null;
           id?: string;
+          is_sample?: boolean;
           issued_at?: string;
           number?: string;
           organization_id?: string;
@@ -829,6 +835,10 @@ export type Database = {
         Args: { p_reminder_id: string };
         Returns: Database["public"]["Tables"]["reminders"]["Row"][];
       };
+      clear_sample_data: {
+        Args: Record<PropertyKey, never>;
+        Returns: number;
+      };
       create_invitation: {
         Args: { p_email: string; p_role?: Database["public"]["Enums"]["member_role"] };
         Returns: { invitation_id: string; token: string }[];
@@ -868,6 +878,10 @@ export type Database = {
       list_invoices: {
         Args: { p_statuses?: Database["public"]["Enums"]["invoice_status"][]; p_search?: string; p_sort?: string; p_limit?: number; p_offset?: number };
         Returns: { id: string; number: string; debtor_id: string; debtor_name: string; client_type: Database["public"]["Enums"]["client_type"]; amount_ttc: number; currency: string; issued_at: string; due_at: string; paid_at: string; status: Database["public"]["Enums"]["invoice_status"]; total_count: number }[];
+      };
+      load_sample_data: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
       };
       provision_organization: {
         Args: { p_user_id: string; p_email: string; p_full_name: string; p_organization_name: string; p_siren: string; p_dpa_version: string; p_dpa_ip: string };

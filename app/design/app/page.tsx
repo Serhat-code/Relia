@@ -16,7 +16,7 @@ export default function AppShellDemoPage() {
     <AppShell member={{ organizationName: "Atelier Démo", userName: "Camille Démo", userEmail: "demo@relia.local" }}>
       <PageHeader title="Bonjour Camille" description="Voici où en sont les règlements de vos clients." />
       <Reveal index={1}>
-        <OnboardingChecklist progress={{ hasActiveMailbox: false, hasInvoices: false }} />
+        <OnboardingChecklist progress={{ hasActiveMailbox: false, hasInvoices: false, hasSampleData: false }} canManage />
       </Reveal>
     </AppShell>
   );

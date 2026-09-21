@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { cn } from "@/lib/cn";
 import type { OnboardingProgress } from "@/lib/data/onboarding";
+import { LoadSampleDataButton } from "./SampleData";
 
 type Step = { title: string; description: string; isDone: boolean; href?: string; action?: string };
 
@@ -23,7 +24,7 @@ function steps(progress: OnboardingProgress): Step[] {
     },
     {
       title: "Importer vos premières factures",
-      description: "Fichier CSV, saisie manuelle ou factures électroniques Factur-X.",
+      description: "Fichier CSV, saisie manuelle ou factures électroniques.",
       isDone: progress.hasInvoices,
       href: "/app/factures",
       action: "Importer",
@@ -32,7 +33,7 @@ function steps(progress: OnboardingProgress): Step[] {
 }
 
 /** Prise en main en moins de 10 minutes (§5.1) : trois étapes, la prochaine mise en avant. */
-export function OnboardingChecklist({ progress }: { progress: OnboardingProgress }) {
+export function OnboardingChecklist({ progress, canManage }: { progress: OnboardingProgress; canManage: boolean }) {
   const list = steps(progress);
   const doneCount = list.filter((step) => step.isDone).length;
   const nextIndex = list.findIndex((step) => !step.isDone);
@@ -94,6 +95,15 @@ export function OnboardingChecklist({ progress }: { progress: OnboardingProgress
           </li>
         ))}
       </ol>
+      {canManage && !progress.hasInvoices && !progress.hasSampleData && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-6 py-4">
+          <p className="max-w-md text-sm text-fg-muted">
+            Pas encore de factures sous la main ? Chargez un jeu d&apos;essai : cinq factures fictives et un client à
+            votre propre adresse, pour voir Relia travailler tout de suite.
+          </p>
+          <LoadSampleDataButton />
+        </div>
+      )}
     </Card>
   );
 }
